@@ -1,0 +1,785 @@
+import React, { useEffect, useMemo, useState } from "react";
+import {
+  ArrowUpCircle,
+  Download,
+  Gavel,
+  HeartHandshake,
+  LayoutDashboard,
+  ListPlus,
+  Projector,
+  QrCode,
+  Search,
+  TabletSmartphone,
+  TimerReset,
+  UserRound,
+} from "lucide-react";
+
+type Bid = {
+  amount: number;
+  bidderNumber: string;
+  createdAt: string;
+};
+
+type AuctionItem = {
+  id: string;
+  title: string;
+  description: string;
+  donorFirstName: string;
+  donorLastName: string;
+  estimatedRetailValue: number;
+  startingBid: number;
+  image: string;
+  bids: Bid[];
+  createdAt: string;
+};
+
+type SubmissionForm = {
+  title: string;
+  description: string;
+  donorFirstName: string;
+  donorLastName: string;
+  estimatedRetailValue: string;
+  startingBid: string;
+  image: string;
+};
+
+type HighestBid = {
+  amount: number;
+  bidderNumber: string;
+  createdAt: string;
+  isStartingBid?: boolean;
+};
+
+const STORAGE_KEY = "church-silent-auction-demo-v5";
+const BIDDER_KEY = "church-silent-auction-bidder-number-v5";
+const CHECKIN_KEY = "church-silent-auction-checkin-v5";
+const MODE_KEY = "church-silent-auction-mode-v5";
+const ADMIN_UNLOCK_KEY = "church-silent-auction-admin-unlocked-v5";
+const ADMIN_PASSWORD = "1988";
+
+const FALLBACK_IMAGE =
+  "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=1200&q=80";
+
+const seedItems: AuctionItem[] = [
+  {
+    id: crypto.randomUUID(),
+    title: "Homemade Cinnamon Rolls",
+    description: "Fresh baked dozen of cinnamon rolls.",
+    donorFirstName: "Youth",
+    donorLastName: "Volunteer",
+    estimatedRetailValue: 25,
+    startingBid: 15,
+    image:
+      "https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=1200&q=80",
+    bids: [],
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: crypto.randomUUID(),
+    title: "Yard Cleanup Service",
+    description: "Two hours of yard cleanup by the youth group.",
+    donorFirstName: "Youth",
+    donorLastName: "Group",
+    estimatedRetailValue: 60,
+    startingBid: 40,
+    image:
+      "https://images.unsplash.com/photo-1466692476868-aef1dfb1e735?auto=format&fit=crop&w=1200&q=80",
+    bids: [],
+    createdAt: new Date().toISOString(),
+  },
+];
+
+function generateBidderNumber(): string {
+  return String(Math.floor(1000 + Math.random() * 9000));
+}
+
+function getHighestBid(item: AuctionItem): HighestBid {
+  if (!item.bids.length) {
+    return {
+      amount: Number(item.startingBid),
+      bidderNumber: "—",
+      createdAt: "",
+      isStartingBid: true,
+    };
+  }
+
+  return [...item.bids].sort((a, b) => {
+    if (b.amount !== a.amount) return b.amount - a.amount;
+    return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+  })[0];
+}
+
+function formatCurrency(value: number | string) {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    maximumFractionDigits: 0,
+  }).format(Number(value || 0));
+}
+
+function toNumber(value: string) {
+  return Number(value || 0);
+}
+
+function fileToDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result || ""));
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+function buildWinnerCsv(items: AuctionItem[]) {
+  const rows = items.map((item) => {
+    const highest = getHighestBid(item);
+    const donor = `${item.donorFirstName || ""} ${item.donorLastName || ""}`.trim();
+    return [
+      `"${item.title.replaceAll('"', '""')}"`,
+      highest.amount,
+      highest.bidderNumber,
+      `"${donor.replaceAll('"', '""')}"`,
+    ].join(",");
+  });
+
+  return "Item,Winning Bid,Winner Bidder Number,Donor\n" + rows.join("\n");
+}
+
+const styles = {
+  page: {
+    minHeight: "100vh",
+    background: "#f8fafc",
+    padding: "16px",
+    fontFamily: "Arial, sans-serif",
+    color: "#0f172a",
+  } as React.CSSProperties,
+  shell: {
+    maxWidth: "1280px",
+    margin: "0 auto",
+    display: "flex",
+    flexDirection: "column",
+    gap: "16px",
+  } as React.CSSProperties,
+  card: {
+    background: "#ffffff",
+    border: "1px solid #e2e8f0",
+    borderRadius: "18px",
+    boxShadow: "0 1px 3px rgba(15,23,42,0.08)",
+  } as React.CSSProperties,
+  button: {
+    background: "#0f172a",
+    color: "white",
+    border: "none",
+    borderRadius: "12px",
+    padding: "12px 16px",
+    cursor: "pointer",
+    fontWeight: 600,
+  } as React.CSSProperties,
+  buttonSecondary: {
+    background: "white",
+    color: "#0f172a",
+    border: "1px solid #cbd5e1",
+    borderRadius: "12px",
+    padding: "12px 16px",
+    cursor: "pointer",
+    fontWeight: 600,
+  } as React.CSSProperties,
+  input: {
+    width: "100%",
+    padding: "12px 14px",
+    border: "1px solid #cbd5e1",
+    borderRadius: "12px",
+    boxSizing: "border-box",
+    fontSize: "14px",
+  } as React.CSSProperties,
+  textarea: {
+    width: "100%",
+    minHeight: "130px",
+    padding: "12px 14px",
+    border: "1px solid #cbd5e1",
+    borderRadius: "12px",
+    boxSizing: "border-box",
+    fontSize: "14px",
+    resize: "vertical",
+  } as React.CSSProperties,
+  badge: {
+    display: "inline-block",
+    padding: "6px 10px",
+    background: "#e2e8f0",
+    borderRadius: "999px",
+    fontSize: "12px",
+    fontWeight: 700,
+  } as React.CSSProperties,
+  alert: {
+    background: "#ffffff",
+    border: "1px solid #cbd5e1",
+    borderRadius: "16px",
+    padding: "14px 16px",
+  } as React.CSSProperties,
+};
+
+function Panel({ children, style }: { children: React.ReactNode; style?: React.CSSProperties }) {
+  return <div style={{ ...styles.card, ...style }}>{children}</div>;
+}
+
+export default function SilentAuction() {
+  const [items, setItems] = useState<AuctionItem[]>([]);
+  const [bidderNumber, setBidderNumber] = useState<string | null>(null);
+  const [checkedIn, setCheckedIn] = useState(false);
+  const [mode, setMode] = useState<"bid" | "donate" | null>(null);
+  const [biddingClosed, setBiddingClosed] = useState(false);
+  const [selectedItem, setSelectedItem] = useState<AuctionItem | null>(null);
+  const [bidAmount, setBidAmount] = useState("");
+  const [search, setSearch] = useState("");
+  const [statusMessage, setStatusMessage] = useState("");
+  const [leaderboardNow, setLeaderboardNow] = useState(Date.now());
+  const [tabletBidderNumber, setTabletBidderNumber] = useState("");
+  const [auctionEndsAt, setAuctionEndsAt] = useState<number>(() => Date.now() + 1000 * 60 * 15);
+  const [softCloseWindowMinutes] = useState(2);
+  const [softCloseExtensionMinutes] = useState(2);
+  const [checkinName, setCheckinName] = useState("");
+  const [currentTab, setCurrentTab] = useState("items");
+  const [adminUnlocked, setAdminUnlocked] = useState(false);
+
+  const [submission, setSubmission] = useState<SubmissionForm>({
+    title: "",
+    description: "",
+    donorFirstName: "",
+    donorLastName: "",
+    estimatedRetailValue: "",
+    startingBid: "",
+    image: "",
+  });
+
+  useEffect(() => {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      setItems(JSON.parse(saved));
+    } else {
+      setItems(seedItems);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(seedItems));
+    }
+
+    const savedCheckin = localStorage.getItem(CHECKIN_KEY);
+    const savedBidder = localStorage.getItem(BIDDER_KEY);
+    const savedMode = localStorage.getItem(MODE_KEY) as "bid" | "donate" | null;
+    const savedAdminUnlocked = localStorage.getItem(ADMIN_UNLOCK_KEY) === "true";
+
+    if (savedCheckin && savedBidder) {
+      setCheckedIn(true);
+      setBidderNumber(savedBidder);
+    }
+    if (savedMode) setMode(savedMode);
+    setAdminUnlocked(savedAdminUnlocked);
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+  }, [items]);
+
+  useEffect(() => {
+    localStorage.setItem(ADMIN_UNLOCK_KEY, String(adminUnlocked));
+  }, [adminUnlocked]);
+
+  useEffect(() => {
+    const interval = setInterval(() => setLeaderboardNow(Date.now()), 10000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const filteredItems = useMemo(() => {
+    const term = search.toLowerCase().trim();
+    if (!term) return items;
+    return items.filter((item) => {
+      const donor = `${item.donorFirstName || ""} ${item.donorLastName || ""}`.toLowerCase();
+      return (
+        item.title.toLowerCase().includes(term) ||
+        item.description.toLowerCase().includes(term) ||
+        donor.includes(term)
+      );
+    });
+  }, [items, search]);
+
+  const itemsWithLeaderStatus = useMemo(() => {
+    return items.map((item) => {
+      const highest = getHighestBid(item);
+      const isWinning = highest.bidderNumber !== "—" && String(highest.bidderNumber) === String(bidderNumber);
+      const hasBidOnItem = item.bids.some((bid) => String(bid.bidderNumber) === String(bidderNumber));
+      const isOutbid = hasBidOnItem && !isWinning;
+      return { ...item, highest, isWinning, isOutbid };
+    });
+  }, [items, bidderNumber]);
+
+  const winningItems = useMemo(() => itemsWithLeaderStatus.filter((item) => item.isWinning), [itemsWithLeaderStatus]);
+  const outbidItems = useMemo(() => itemsWithLeaderStatus.filter((item) => item.isOutbid), [itemsWithLeaderStatus]);
+
+  const checkoutItems = useMemo(() => {
+    if (!biddingClosed) return [];
+    return items
+      .map((item) => ({ ...item, highest: getHighestBid(item) }))
+      .filter((item) => item.highest.bidderNumber !== "—" && String(item.highest.bidderNumber) === String(bidderNumber));
+  }, [items, bidderNumber, biddingClosed]);
+
+  const checkoutTotal = useMemo(() => checkoutItems.reduce((sum, item) => sum + Number(item.highest.amount || 0), 0), [checkoutItems]);
+
+  const projectorData = useMemo(() => {
+    void leaderboardNow;
+    return [...items]
+      .map((item) => ({ ...item, highest: getHighestBid(item) }))
+      .sort((a, b) => b.highest.amount - a.highest.amount);
+  }, [items, leaderboardNow]);
+
+  const timeRemainingMs = Math.max(auctionEndsAt - Date.now(), 0);
+  const remainingMinutes = Math.floor(timeRemainingMs / 60000);
+  const remainingSeconds = Math.floor((timeRemainingMs % 60000) / 1000);
+  const isInSoftCloseWindow = timeRemainingMs > 0 && timeRemainingMs <= softCloseWindowMinutes * 60 * 1000;
+  const registrationUrl = "https://desert-ridge-ward-youth-auction.example/register";
+
+  function handleCheckin() {
+    const number = generateBidderNumber();
+    localStorage.setItem(BIDDER_KEY, number);
+    localStorage.setItem(CHECKIN_KEY, "true");
+    setBidderNumber(number);
+    setCheckedIn(true);
+    setStatusMessage(`Welcome${checkinName ? `, ${checkinName}` : ""}. Your anonymous bidder number is #${number}.`);
+  }
+
+  function chooseMode(nextMode: "bid" | "donate") {
+    setMode(nextMode);
+    localStorage.setItem(MODE_KEY, nextMode);
+  }
+
+  function openBid(item: AuctionItem) {
+    setSelectedItem(item);
+    setBidAmount(String(getHighestBid(item).amount + 1));
+  }
+
+  function applyIncrement(increment: number) {
+    if (!selectedItem) return;
+    const highest = getHighestBid(selectedItem).amount;
+    setBidAmount(String(highest + increment));
+  }
+
+  function placeBid(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    if (!selectedItem) return;
+    if (biddingClosed) {
+      setStatusMessage("Bidding is currently closed.");
+      return;
+    }
+
+    const amount = Number(bidAmount);
+    const highest = getHighestBid(selectedItem).amount;
+
+    if (!amount || amount <= highest) {
+      setStatusMessage(`Bid must be higher than ${formatCurrency(highest)}.`);
+      return;
+    }
+
+    const bidderToUse = tabletBidderNumber || bidderNumber || "";
+
+    setItems((prev) =>
+      prev.map((item) =>
+        item.id === selectedItem.id
+          ? {
+              ...item,
+              bids: [
+                ...item.bids,
+                {
+                  amount,
+                  bidderNumber: bidderToUse,
+                  createdAt: new Date().toISOString(),
+                },
+              ],
+            }
+          : item
+      )
+    );
+
+    const msRemainingBeforeBid = auctionEndsAt - Date.now();
+    if (msRemainingBeforeBid <= softCloseWindowMinutes * 60 * 1000) {
+      setAuctionEndsAt(Date.now() + softCloseExtensionMinutes * 60 * 1000);
+      setStatusMessage(`Bid placed successfully on ${selectedItem.title}. You are currently winning at ${formatCurrency(amount)}. Auction extended by ${softCloseExtensionMinutes} minutes.`);
+    } else {
+      setStatusMessage(`Bid placed successfully on ${selectedItem.title}. You are currently winning at ${formatCurrency(amount)}.`);
+    }
+
+    setSelectedItem(null);
+    setBidAmount("");
+    setTabletBidderNumber("");
+  }
+
+  function handleAdminTabClick() {
+    if (adminUnlocked) {
+      setCurrentTab("admin");
+      return;
+    }
+    const pwd = window.prompt("Enter admin password");
+    if (pwd === ADMIN_PASSWORD) {
+      setAdminUnlocked(true);
+      setCurrentTab("admin");
+      setStatusMessage("Admin unlocked.");
+    } else if (pwd !== null) {
+      setStatusMessage("Incorrect admin password.");
+    }
+  }
+
+  async function handleImageUpload(file?: File | null) {
+    if (!file) return;
+    const dataUrl = await fileToDataUrl(file);
+    setSubmission((prev) => ({ ...prev, image: dataUrl }));
+  }
+
+  function handleDonationSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const newItem: AuctionItem = {
+      id: crypto.randomUUID(),
+      title: submission.title.trim(),
+      description: submission.description.trim(),
+      donorFirstName: submission.donorFirstName.trim(),
+      donorLastName: submission.donorLastName.trim(),
+      estimatedRetailValue: toNumber(submission.estimatedRetailValue),
+      startingBid: toNumber(submission.startingBid),
+      image: submission.image || FALLBACK_IMAGE,
+      bids: [],
+      createdAt: new Date().toISOString(),
+    };
+
+    if (!newItem.title || !newItem.description || !newItem.donorFirstName || !newItem.donorLastName || !newItem.estimatedRetailValue || !newItem.startingBid) {
+      setStatusMessage("Please complete all donation fields before submitting.");
+      return;
+    }
+
+    setItems((prev) => [newItem, ...prev]);
+    setSubmission({
+      title: "",
+      description: "",
+      donorFirstName: "",
+      donorLastName: "",
+      estimatedRetailValue: "",
+      startingBid: "",
+      image: "",
+    });
+    setStatusMessage(`Donation submitted: ${newItem.title} has been added to the auction.`);
+  }
+
+  function exportWinners() {
+    const csv = buildWinnerCsv(items);
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "auction-winners.csv";
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  const totalBids = items.reduce((sum, item) => sum + item.bids.length, 0);
+  const totalValue = items.reduce((sum, item) => sum + getHighestBid(item).amount, 0);
+
+  const tabButtonStyle = (tab: string): React.CSSProperties => ({
+    ...styles.buttonSecondary,
+    background: currentTab === tab ? "#0f172a" : "white",
+    color: currentTab === tab ? "white" : "#0f172a",
+    width: "100%",
+    padding: "10px 12px",
+  });
+
+  const actionButtonStyle = (disabled?: boolean): React.CSSProperties => ({
+    ...styles.button,
+    width: "100%",
+    opacity: disabled ? 0.6 : 1,
+    cursor: disabled ? "not-allowed" : "pointer",
+  });
+
+  if (!checkedIn) {
+    return (
+      <div style={{ ...styles.page, display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <Panel style={{ width: "100%", maxWidth: "420px", padding: "24px" }}>
+          <h2 style={{ marginTop: 0 }}>Desert Ridge Ward Youth Auction Check-in</h2>
+          <div style={{ marginBottom: "12px" }}>
+            <label style={{ display: "block", marginBottom: "6px", fontWeight: 600 }}>Name (optional)</label>
+            <input style={styles.input} value={checkinName} onChange={(e) => setCheckinName(e.target.value)} placeholder="Enter your name" />
+          </div>
+          <p style={{ color: "#475569", fontSize: "14px", lineHeight: 1.5 }}>
+            No login required. Once you check in, you will receive an anonymous bidder number that auto-populates when you bid.
+          </p>
+          <button style={{ ...styles.button, width: "100%" }} onClick={handleCheckin}>Register</button>
+        </Panel>
+      </div>
+    );
+  }
+
+  if (!mode) {
+    return (
+      <div style={{ ...styles.page, display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <div style={{ width: "100%", maxWidth: "980px", display: "grid", gap: "24px", gridTemplateColumns: "repeat(auto-fit,minmax(300px,1fr))" }}>
+          <Panel style={{ padding: "28px" }}>
+            <div style={{ display: "inline-flex", padding: "12px", background: "#f1f5f9", borderRadius: "16px" }}><Gavel /></div>
+            <h2>I want to bid</h2>
+            <p style={{ color: "#475569" }}>Browse auction items, place bids with your anonymous bidder number, and see whether you are currently winning.</p>
+            <button style={styles.button} onClick={() => chooseMode("bid")}>Continue to Bidding</button>
+          </Panel>
+          <Panel style={{ padding: "28px" }}>
+            <div style={{ display: "inline-flex", padding: "12px", background: "#f1f5f9", borderRadius: "16px" }}><HeartHandshake /></div>
+            <h2>I want to donate</h2>
+            <p style={{ color: "#475569" }}>Submit a good or service for the auction with all the donor and pricing details needed to add it to the catalog.</p>
+            <button style={styles.buttonSecondary} onClick={() => chooseMode("donate")}>Continue to Donation Form</button>
+          </Panel>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div style={styles.page}>
+      <div style={styles.shell}>
+        <div style={{ display: "grid", gap: "16px", gridTemplateColumns: "minmax(0,1.35fr) minmax(0,0.9fr)" }}>
+          <Panel style={{ padding: "24px" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", gap: "16px", alignItems: "center", flexWrap: "wrap" }}>
+              <div>
+                <h1 style={{ margin: 0, fontSize: "32px" }}>Church Youth Silent Auction</h1>
+                <p style={{ marginBottom: 0, color: "#475569" }}>Anonymous bidder numbers, live item list, quick bidding, item listing, checkout, and projector mode.</p>
+              </div>
+              <div style={{ background: "#0f172a", color: "white", borderRadius: "18px", padding: "18px 20px", minWidth: "220px" }}>
+                <div style={{ display: "flex", gap: "8px", alignItems: "center", color: "#cbd5e1", fontSize: "14px" }}><UserRound size={16} /> Your bidder number</div>
+                <div style={{ marginTop: "6px", fontSize: "32px", fontWeight: 700, letterSpacing: "0.2em" }}>#{bidderNumber}</div>
+              </div>
+            </div>
+          </Panel>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: "16px" }}>
+            {[{ label: "Items", value: items.length }, { label: "Total bids", value: totalBids }, { label: "Current value", value: formatCurrency(totalValue) }].map((stat) => (
+              <Panel key={stat.label} style={{ padding: "16px" }}>
+                <div style={{ fontSize: "12px", textTransform: "uppercase", color: "#64748b" }}>{stat.label}</div>
+                <div style={{ marginTop: "8px", fontSize: "28px", fontWeight: 700 }}>{stat.value}</div>
+              </Panel>
+            ))}
+          </div>
+        </div>
+
+        {statusMessage && <div style={styles.alert}>{statusMessage}</div>}
+
+        <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+          <div style={{ display: "flex", gap: "12px", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap" }}>
+            <Panel style={{ padding: "8px", flex: 1 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(9, minmax(0, 1fr))", gap: "8px" }}>
+                <button style={tabButtonStyle("items")} onClick={() => setCurrentTab("items")}><Gavel size={16} style={{ marginRight: 6, verticalAlign: "middle" }} />Items</button>
+                <button style={tabButtonStyle("dashboard")} onClick={() => setCurrentTab("dashboard")}><LayoutDashboard size={16} style={{ marginRight: 6, verticalAlign: "middle" }} />Dashboard</button>
+                <button style={tabButtonStyle("projector")} onClick={() => setCurrentTab("projector")}><Projector size={16} style={{ marginRight: 6, verticalAlign: "middle" }} />Live Auction Board</button>
+                <button style={tabButtonStyle("donate")} onClick={() => setCurrentTab("donate")}><ListPlus size={16} style={{ marginRight: 6, verticalAlign: "middle" }} />List Item</button>
+                <button style={tabButtonStyle("register")} onClick={() => setCurrentTab("register")}><QrCode size={16} style={{ marginRight: 6, verticalAlign: "middle" }} />Register</button>
+                <button style={tabButtonStyle("admin")} onClick={handleAdminTabClick}><TabletSmartphone size={16} style={{ marginRight: 6, verticalAlign: "middle" }} />ADMIN</button>
+                <button style={tabButtonStyle("winning")} onClick={() => setCurrentTab("winning")}><Gavel size={16} style={{ marginRight: 6, verticalAlign: "middle" }} />Winning</button>
+                <button style={tabButtonStyle("outbid")} onClick={() => setCurrentTab("outbid")}><ArrowUpCircle size={16} style={{ marginRight: 6, verticalAlign: "middle" }} />Outbid</button>
+                <button style={tabButtonStyle("checkout")} onClick={() => setCurrentTab("checkout")}><Download size={16} style={{ marginRight: 6, verticalAlign: "middle" }} />Checkout</button>
+              </div>
+            </Panel>
+            <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+              <button style={styles.buttonSecondary} onClick={() => setBiddingClosed((value) => !value)}>{biddingClosed ? "Reopen Bidding" : "Close Bidding"}</button>
+              <button style={styles.buttonSecondary} onClick={exportWinners}><Download size={16} style={{ marginRight: 6, verticalAlign: "middle" }} />Export Winners</button>
+            </div>
+          </div>
+
+          {currentTab === "items" && (
+            <>
+              <Panel style={{ padding: "16px" }}>
+                <div style={{ display: "flex", gap: "12px", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap" }}>
+                  <div style={{ position: "relative", width: "100%", maxWidth: "420px" }}>
+                    <Search size={16} style={{ position: "absolute", left: 12, top: 13, color: "#94a3b8" }} />
+                    <input style={{ ...styles.input, paddingLeft: "34px" }} value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search items or services" />
+                  </div>
+                  <div style={{ color: "#64748b", fontSize: "14px" }}>{biddingClosed ? "Bidding is currently closed." : "Bidding is currently open."}</div>
+                </div>
+              </Panel>
+              <div style={{ display: "grid", gap: "20px", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))" }}>
+                {filteredItems.map((item) => {
+                  const highest = getHighestBid(item);
+                  const isWinning = highest.bidderNumber !== "—" && String(highest.bidderNumber) === String(bidderNumber);
+                  const hasBidOnItem = item.bids.some((bid) => String(bid.bidderNumber) === String(bidderNumber));
+                  const isOutbid = hasBidOnItem && !isWinning;
+                  return (
+                    <Panel key={item.id} style={{ overflow: "hidden" }}>
+                      <div style={{ aspectRatio: "4 / 3", background: "#e2e8f0" }}><img src={item.image} alt={item.title} style={{ width: "100%", height: "100%", objectFit: "cover" }} /></div>
+                      <div style={{ padding: "20px" }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", gap: "12px", alignItems: "flex-start" }}>
+                          <h3 style={{ marginTop: 0 }}>{item.title}</h3>
+                          <span style={styles.badge}>{item.bids.length ? `${item.bids.length} bids` : "No bids yet"}</span>
+                        </div>
+                        <p style={{ color: "#475569", fontSize: "14px" }}>{item.description}</p>
+                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+                          <div style={{ background: "#f1f5f9", borderRadius: "12px", padding: "12px" }}><div style={{ color: "#64748b", fontSize: "14px" }}>Current highest</div><div style={{ fontSize: "20px", fontWeight: 700 }}>{formatCurrency(highest.amount)}</div></div>
+                          <div style={{ background: "#f1f5f9", borderRadius: "12px", padding: "12px" }}><div style={{ color: "#64748b", fontSize: "14px" }}>Leading bidder</div><div style={{ fontSize: "20px", fontWeight: 700 }}>{highest.bidderNumber === "—" ? "—" : `#${highest.bidderNumber}`}</div></div>
+                        </div>
+                        {isWinning && <div style={{ marginTop: "12px", border: "1px solid #a7f3d0", background: "#ecfdf5", color: "#047857", borderRadius: "12px", padding: "12px", fontSize: "14px" }}>You are currently winning this item.</div>}
+                        {isOutbid && <div style={{ marginTop: "12px", border: "1px solid #fde68a", background: "#fffbeb", color: "#b45309", borderRadius: "12px", padding: "12px", fontSize: "14px" }}>You have been outbid on this item.</div>}
+                        <button style={{ ...actionButtonStyle(biddingClosed), marginTop: "14px" }} onClick={() => openBid(item)} disabled={biddingClosed}>Place Bid</button>
+                      </div>
+                    </Panel>
+                  );
+                })}
+              </div>
+            </>
+          )}
+
+          {currentTab === "dashboard" && (
+            <Panel style={{ padding: "20px" }}>
+              <h3 style={{ marginTop: 0 }}>Highest bid dashboard</h3>
+              <div style={{ overflowX: "auto" }}>
+                <table style={{ width: "100%", minWidth: "860px", borderCollapse: "separate", borderSpacing: "0 8px" }}>
+                  <thead>
+                    <tr style={{ color: "#64748b", fontSize: "14px", textAlign: "left" }}>
+                      <th style={{ padding: "8px 16px" }}>Item</th>
+                      <th style={{ padding: "8px 16px" }}>Retail Value</th>
+                      <th style={{ padding: "8px 16px" }}>Starting Bid</th>
+                      <th style={{ padding: "8px 16px" }}>Highest Bid</th>
+                      <th style={{ padding: "8px 16px" }}>Highest Bidder #</th>
+                      <th style={{ padding: "8px 16px" }}>Bid Count</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {items.slice().sort((a, b) => a.title.localeCompare(b.title)).map((item) => {
+                      const highest = getHighestBid(item);
+                      return (
+                        <tr key={item.id} style={{ background: "#f8fafc" }}>
+                          <td style={{ padding: "12px 16px", fontWeight: 700 }}>{item.title}</td>
+                          <td style={{ padding: "12px 16px" }}>{formatCurrency(item.estimatedRetailValue)}</td>
+                          <td style={{ padding: "12px 16px" }}>{formatCurrency(item.startingBid)}</td>
+                          <td style={{ padding: "12px 16px", fontWeight: 700 }}>{formatCurrency(highest.amount)}</td>
+                          <td style={{ padding: "12px 16px" }}>{highest.bidderNumber === "—" ? "—" : `#${highest.bidderNumber}`}</td>
+                          <td style={{ padding: "12px 16px" }}>{item.bids.length}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </Panel>
+          )}
+
+          {currentTab === "projector" && (
+            <Panel style={{ background: "#0f172a", color: "white", padding: "32px", border: "none" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", gap: "16px", alignItems: "flex-start", flexWrap: "wrap" }}>
+                <div>
+                  <div style={{ color: "#94a3b8", fontSize: "12px", textTransform: "uppercase", letterSpacing: "0.25em" }}>Live Auction Board</div>
+                  <h2 style={{ marginTop: "8px", fontSize: "40px" }}>Current Highest Bids</h2>
+                  <p style={{ color: "#94a3b8" }}>Auto-refreshes every 10 seconds for projector display.</p>
+                </div>
+                <div style={{ display: "flex", gap: "12px" }}>
+                  <div style={{ background: "rgba(255,255,255,0.1)", borderRadius: "16px", padding: "14px 16px" }}><div style={{ color: "#94a3b8", fontSize: "12px", textTransform: "uppercase" }}>Status</div><div style={{ marginTop: "6px", fontWeight: 700 }}>{biddingClosed ? "Closed" : "Open"}</div></div>
+                  <div style={{ background: "rgba(255,255,255,0.1)", borderRadius: "16px", padding: "14px 16px" }}><div style={{ color: "#94a3b8", fontSize: "12px", textTransform: "uppercase" }}>Time Left</div><div style={{ marginTop: "6px", fontWeight: 700 }}>{remainingMinutes}:{String(remainingSeconds).padStart(2, "0")}</div></div>
+                </div>
+              </div>
+              {isInSoftCloseWindow && <div style={{ marginTop: "16px", marginBottom: "16px", border: "1px solid rgba(251,191,36,0.35)", background: "rgba(251,191,36,0.1)", color: "#fde68a", borderRadius: "16px", padding: "14px 16px" }}>Soft-close window is active. Any new bid extends the auction by {softCloseExtensionMinutes} minutes.</div>}
+              <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                {projectorData.map((item, index) => (
+                  <div key={item.id} style={{ display: "grid", gridTemplateColumns: "70px 1.6fr 1fr 1fr", gap: "16px", alignItems: "center", background: "rgba(255,255,255,0.05)", borderRadius: "18px", padding: "18px 20px" }}>
+                    <div style={{ fontSize: "34px", fontWeight: 700, color: "#cbd5e1" }}>{index + 1}</div>
+                    <div><div style={{ fontSize: "28px", fontWeight: 700 }}>{item.title}</div><div style={{ color: "#94a3b8", fontSize: "14px" }}>Starting at {formatCurrency(item.startingBid)}</div></div>
+                    <div><div style={{ color: "#94a3b8", fontSize: "12px", textTransform: "uppercase", letterSpacing: "0.18em" }}>High Bid</div><div style={{ fontSize: "34px", fontWeight: 700 }}>{formatCurrency(item.highest.amount)}</div></div>
+                    <div><div style={{ color: "#94a3b8", fontSize: "12px", textTransform: "uppercase", letterSpacing: "0.18em" }}>Bidder #</div><div style={{ fontSize: "34px", fontWeight: 700 }}>{item.highest.bidderNumber === "—" ? "—" : `#${item.highest.bidderNumber}`}</div></div>
+                  </div>
+                ))}
+              </div>
+            </Panel>
+          )}
+
+          {currentTab === "donate" && (
+            <Panel style={{ padding: "20px" }}>
+              <h3 style={{ marginTop: 0 }}>List an Item or Service</h3>
+              <form onSubmit={handleDonationSubmit} style={{ display: "grid", gap: "16px", gridTemplateColumns: "repeat(2, minmax(0, 1fr))" }}>
+                <div style={{ gridColumn: "1 / -1" }}><label style={{ display: "block", marginBottom: "6px", fontWeight: 600 }}>Item name</label><input style={styles.input} value={submission.title} onChange={(e) => setSubmission((prev) => ({ ...prev, title: e.target.value }))} /></div>
+                <div style={{ gridColumn: "1 / -1" }}><label style={{ display: "block", marginBottom: "6px", fontWeight: 600 }}>Description</label><textarea style={styles.textarea} value={submission.description} onChange={(e) => setSubmission((prev) => ({ ...prev, description: e.target.value }))} /></div>
+                <div><label style={{ display: "block", marginBottom: "6px", fontWeight: 600 }}>Donor first name</label><input style={styles.input} value={submission.donorFirstName} onChange={(e) => setSubmission((prev) => ({ ...prev, donorFirstName: e.target.value }))} /></div>
+                <div><label style={{ display: "block", marginBottom: "6px", fontWeight: 600 }}>Donor last name</label><input style={styles.input} value={submission.donorLastName} onChange={(e) => setSubmission((prev) => ({ ...prev, donorLastName: e.target.value }))} /></div>
+                <div><label style={{ display: "block", marginBottom: "6px", fontWeight: 600 }}>Estimated retail value</label><input style={styles.input} type="number" min="1" value={submission.estimatedRetailValue} onChange={(e) => setSubmission((prev) => ({ ...prev, estimatedRetailValue: e.target.value }))} /></div>
+                <div><label style={{ display: "block", marginBottom: "6px", fontWeight: 600 }}>Starting bid</label><input style={styles.input} type="number" min="1" value={submission.startingBid} onChange={(e) => setSubmission((prev) => ({ ...prev, startingBid: e.target.value }))} /></div>
+                <div style={{ gridColumn: "1 / -1" }}>
+                  <label style={{ display: "block", marginBottom: "6px", fontWeight: 600 }}>Upload item photo (optional)</label>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                    <input type="file" accept="image/*" capture="environment" onChange={async (e) => handleImageUpload(e.target.files?.[0])} />
+                    <input style={styles.input} placeholder="Or paste an image URL" value={submission.image} onChange={(e) => setSubmission((prev) => ({ ...prev, image: e.target.value }))} />
+                    <p style={{ color: "#64748b", fontSize: "12px" }}>You can upload a photo, take one with your camera, or paste a URL.</p>
+                  </div>
+                </div>
+                <div style={{ gridColumn: "1 / -1", display: "flex", justifyContent: "flex-end" }}><button type="submit" style={styles.button}>Submit Donation</button></div>
+              </form>
+            </Panel>
+          )}
+
+          {currentTab === "register" && (
+            <Panel style={{ padding: "20px" }}>
+              <h3 style={{ marginTop: 0 }}>QR Code Registration</h3>
+              <div style={{ display: "grid", gap: "24px", gridTemplateColumns: "280px 1fr", alignItems: "center" }}>
+                <div style={{ aspectRatio: "1 / 1", display: "flex", alignItems: "center", justifyContent: "center", border: "2px dashed #cbd5e1", borderRadius: "24px", background: "#f8fafc" }}>
+                  <div style={{ textAlign: "center", color: "#64748b" }}><QrCode size={80} style={{ marginBottom: 12 }} /><div style={{ fontWeight: 700 }}>QR Placeholder</div><div style={{ fontSize: "14px" }}>Point this to your live check-in page</div></div>
+                </div>
+                <div>
+                  <p style={{ color: "#475569" }}>Print this page or display it at the event entrance so guests can scan the code, open the site, and register for an anonymous bidder number.</p>
+                  <div style={{ background: "#f8fafc", borderRadius: "16px", padding: "16px" }}><div style={{ color: "#64748b", fontSize: "14px" }}>Registration URL</div><div style={{ marginTop: "4px", fontWeight: 700, wordBreak: "break-all" }}>{registrationUrl}</div></div>
+                  <p style={{ color: "#64748b", fontSize: "14px" }}>In the live version, this QR should be generated from your real deployment URL.</p>
+                </div>
+              </div>
+            </Panel>
+          )}
+
+          {currentTab === "admin" && (
+            <Panel style={{ padding: "20px" }}>
+              <h3 style={{ marginTop: 0 }}>Admin Controls</h3>
+              <p style={{ color: "#475569" }}>Use this on a leader&apos;s tablet to help members who want assistance. Enter their bidder number, then open any item and place bids on their behalf.</p>
+              <div style={{ display: "grid", gap: "16px", gridTemplateColumns: "240px 1fr", alignItems: "end" }}>
+                <div><label style={{ display: "block", marginBottom: "6px", fontWeight: 600 }}>Active bidder number</label><input style={styles.input} value={tabletBidderNumber} onChange={(e) => setTabletBidderNumber(e.target.value.replace(/[^0-9]/g, ""))} placeholder="Enter bidder #" /></div>
+                <div style={{ background: "#f8fafc", borderRadius: "16px", padding: "16px", color: "#475569", fontSize: "14px" }}>When a bidder number is entered here, bids submitted from the bid modal will use that number instead of the current device&apos;s number.</div>
+              </div>
+              <div style={{ marginTop: "16px", border: "1px solid #e2e8f0", borderRadius: "16px", padding: "16px" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "12px", fontWeight: 700 }}><TimerReset size={16} /> Auction Timing</div>
+                <div style={{ display: "grid", gap: "12px", gridTemplateColumns: "repeat(3, 1fr)" }}>
+                  <div style={{ background: "#f8fafc", borderRadius: "12px", padding: "12px" }}><div style={{ color: "#64748b", fontSize: "12px", textTransform: "uppercase" }}>Time Remaining</div><div style={{ marginTop: "4px", fontSize: "24px", fontWeight: 700 }}>{remainingMinutes}:{String(remainingSeconds).padStart(2, "0")}</div></div>
+                  <div style={{ background: "#f8fafc", borderRadius: "12px", padding: "12px" }}><div style={{ color: "#64748b", fontSize: "12px", textTransform: "uppercase" }}>Soft-Close Window</div><div style={{ marginTop: "4px", fontSize: "24px", fontWeight: 700 }}>{softCloseWindowMinutes} min</div></div>
+                  <div style={{ background: "#f8fafc", borderRadius: "12px", padding: "12px" }}><div style={{ color: "#64748b", fontSize: "12px", textTransform: "uppercase" }}>Extension</div><div style={{ marginTop: "4px", fontSize: "24px", fontWeight: 700 }}>+{softCloseExtensionMinutes} min</div></div>
+                </div>
+              </div>
+            </Panel>
+          )}
+
+          {currentTab === "winning" && (
+            <Panel style={{ padding: "20px" }}>
+              <h3 style={{ marginTop: 0 }}>Items You&apos;re Winning</h3>
+              {winningItems.length === 0 ? <div style={{ background: "#f8fafc", borderRadius: "16px", padding: "24px", color: "#475569" }}>You are not currently winning any items.</div> : <div style={{ display: "grid", gap: "16px", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))" }}>{winningItems.map((item) => <Panel key={item.id} style={{ overflow: "hidden" }}><div style={{ aspectRatio: "4 / 3", background: "#e2e8f0" }}><img src={item.image} alt={item.title} style={{ width: "100%", height: "100%", objectFit: "cover" }} /></div><div style={{ padding: "20px" }}><div style={{ fontSize: "20px", fontWeight: 700 }}>{item.title}</div><div style={{ marginTop: "10px", border: "1px solid #a7f3d0", background: "#ecfdf5", color: "#047857", borderRadius: "12px", padding: "12px", fontSize: "14px" }}>You are currently winning this item.</div><div style={{ marginTop: "10px", color: "#475569", fontSize: "14px" }}>Current bid: <span style={{ fontWeight: 700 }}>{formatCurrency(item.highest.amount)}</span></div><button style={{ ...actionButtonStyle(biddingClosed), marginTop: "12px" }} onClick={() => openBid(item)} disabled={biddingClosed}>Raise My Bid</button></div></Panel>)}</div>}
+            </Panel>
+          )}
+
+          {currentTab === "outbid" && (
+            <Panel style={{ padding: "20px" }}>
+              <h3 style={{ marginTop: 0 }}>Items You&apos;ve Been Outbid On</h3>
+              {outbidItems.length === 0 ? <div style={{ background: "#f8fafc", borderRadius: "16px", padding: "24px", color: "#475569" }}>You have not been outbid on any items.</div> : <div style={{ display: "grid", gap: "16px", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))" }}>{outbidItems.map((item) => <Panel key={item.id} style={{ overflow: "hidden" }}><div style={{ aspectRatio: "4 / 3", background: "#e2e8f0" }}><img src={item.image} alt={item.title} style={{ width: "100%", height: "100%", objectFit: "cover" }} /></div><div style={{ padding: "20px" }}><div style={{ fontSize: "20px", fontWeight: 700 }}>{item.title}</div><div style={{ marginTop: "10px", border: "1px solid #fde68a", background: "#fffbeb", color: "#b45309", borderRadius: "12px", padding: "12px", fontSize: "14px" }}>You have been outbid on this item.</div><div style={{ marginTop: "10px", color: "#475569", fontSize: "14px" }}>Current bid: <span style={{ fontWeight: 700 }}>{formatCurrency(item.highest.amount)}</span></div><button style={{ ...actionButtonStyle(biddingClosed), marginTop: "12px" }} onClick={() => openBid(item)} disabled={biddingClosed}>Bid Again</button></div></Panel>)}</div>}
+            </Panel>
+          )}
+
+          {currentTab === "checkout" && (
+            <Panel style={{ padding: "20px" }}>
+              <h3 style={{ marginTop: 0 }}>Auction Checkout</h3>
+              {!biddingClosed ? <div style={{ border: "1px solid #fde68a", background: "#fffbeb", color: "#92400e", borderRadius: "16px", padding: "20px" }}>Checkout will appear automatically after the auction is closed.</div> : checkoutItems.length === 0 ? <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}><div style={{ background: "#f8fafc", borderRadius: "16px", padding: "20px", color: "#475569" }}>No winning items were found for bidder #{bidderNumber}.</div><div style={{ border: "1px solid #e2e8f0", borderRadius: "16px", padding: "20px" }}><div style={{ color: "#64748b", fontSize: "14px" }}>Bidder Number</div><div style={{ marginTop: "4px", fontSize: "28px", fontWeight: 700 }}>#{bidderNumber}</div><div style={{ marginTop: "12px", color: "#64748b", fontSize: "14px" }}>Total Due</div><div style={{ marginTop: "4px", fontSize: "38px", fontWeight: 700 }}>$0</div></div></div> : <><div style={{ display: "grid", gap: "16px", gridTemplateColumns: "1fr 280px" }}><div style={{ border: "1px solid #e2e8f0", borderRadius: "16px", padding: "20px" }}><div style={{ color: "#64748b", fontSize: "14px" }}>Bidder Number</div><div style={{ marginTop: "4px", fontSize: "34px", fontWeight: 700 }}>#{bidderNumber}</div><div style={{ marginTop: "14px", color: "#64748b", fontSize: "14px" }}>Items Won</div><div style={{ marginTop: "4px", fontSize: "28px", fontWeight: 700 }}>{checkoutItems.length}</div></div><div style={{ background: "#0f172a", color: "white", borderRadius: "16px", padding: "20px" }}><div style={{ color: "#cbd5e1", fontSize: "14px" }}>Total Due</div><div style={{ marginTop: "8px", fontSize: "42px", fontWeight: 700 }}>{formatCurrency(checkoutTotal)}</div></div></div><div style={{ overflowX: "auto", border: "1px solid #e2e8f0", borderRadius: "16px" }}><table style={{ width: "100%", minWidth: "700px", borderCollapse: "collapse" }}><thead style={{ background: "#f8fafc", color: "#64748b", fontSize: "14px" }}><tr><th style={{ padding: "12px 16px", textAlign: "left" }}>Item</th><th style={{ padding: "12px 16px", textAlign: "left" }}>Winning Bid</th><th style={{ padding: "12px 16px", textAlign: "left" }}>Bidder #</th><th style={{ padding: "12px 16px", textAlign: "left" }}>Donor</th></tr></thead><tbody>{checkoutItems.map((item) => <tr key={item.id} style={{ borderTop: "1px solid #e2e8f0" }}><td style={{ padding: "12px 16px", fontWeight: 700 }}>{item.title}</td><td style={{ padding: "12px 16px" }}>{formatCurrency(item.highest.amount)}</td><td style={{ padding: "12px 16px" }}>#{item.highest.bidderNumber}</td><td style={{ padding: "12px 16px" }}>{item.donorFirstName} {item.donorLastName}</td></tr>)}</tbody></table></div></>}
+            </Panel>
+          )}
+        </div>
+
+        {selectedItem && (
+          <div style={{ position: "fixed", inset: 0, background: "rgba(15,23,42,0.45)", display: "flex", alignItems: "center", justifyContent: "center", padding: "20px", zIndex: 1000 }} onClick={() => setSelectedItem(null)}>
+            <div style={{ ...styles.card, width: "100%", maxWidth: "560px", padding: "24px" }} onClick={(e) => e.stopPropagation()}>
+              <h3 style={{ marginTop: 0 }}>Place a bid</h3>
+              <form onSubmit={placeBid} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+                <div style={{ background: "#f8fafc", borderRadius: "16px", padding: "16px" }}><div style={{ color: "#64748b", fontSize: "14px" }}>Item</div><div style={{ fontSize: "20px", fontWeight: 700 }}>{selectedItem.title}</div></div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+                  <div><label style={{ display: "block", marginBottom: "6px", fontWeight: 600 }}>Bidder number</label><input style={{ ...styles.input, background: "#f8fafc" }} value={`#${tabletBidderNumber || bidderNumber || ""}`} readOnly /></div>
+                  <div><label style={{ display: "block", marginBottom: "6px", fontWeight: 600 }}>Current highest</label><input style={{ ...styles.input, background: "#f8fafc" }} value={formatCurrency(getHighestBid(selectedItem).amount)} readOnly /></div>
+                </div>
+                <div><label style={{ display: "block", marginBottom: "6px", fontWeight: 600 }}>Your bid amount</label><input style={styles.input} type="number" min={getHighestBid(selectedItem).amount + 1} value={bidAmount} onChange={(e) => setBidAmount(e.target.value)} /><p style={{ color: "#64748b", fontSize: "12px" }}>Bid must be at least {formatCurrency(getHighestBid(selectedItem).amount + 1)}.</p></div>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "12px" }}>{[1, 5, 10].map((increment) => <button key={increment} type="button" style={styles.buttonSecondary} onClick={() => applyIncrement(increment)}><ArrowUpCircle size={16} style={{ marginRight: 6, verticalAlign: "middle" }} />+{increment}</button>)}</div>
+                <div style={{ display: "flex", justifyContent: "flex-end", gap: "12px" }}><button type="button" style={styles.buttonSecondary} onClick={() => setSelectedItem(null)}>Cancel</button><button type="submit" style={styles.button}>Submit Bid</button></div>
+              </form>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
