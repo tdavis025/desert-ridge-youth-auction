@@ -477,6 +477,7 @@ export default function SilentAuction() {
   const totalValue = items.reduce((sum, item) => sum + getHighestBid(item).amount, 0);
 
   const tabButtonStyle = (tab: string): React.CSSProperties => ({
+
   ...styles.buttonSecondary,
   background: currentTab === tab ? "#0f172a" : "white",
   color: currentTab === tab ? "white" : "#0f172a",
@@ -535,7 +536,9 @@ export default function SilentAuction() {
   return (
     <div style={styles.page}>
       <div style={styles.shell}>
+
         <div style={{ display: "grid", gap: "16px", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))" }}>
+
           <Panel style={{ padding: "24px" }}>
             <div style={{ display: "flex", justifyContent: "space-between", gap: "16px", alignItems: "center", flexWrap: "wrap" }}>
               <div>
@@ -548,7 +551,9 @@ export default function SilentAuction() {
               </div>
             </div>
           </Panel>
+
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))", gap: "16px" }}>
+
             {[{ label: "Items", value: items.length }, { label: "Total bids", value: totalBids }, { label: "Current value", value: formatCurrency(totalValue) }].map((stat) => (
               <Panel key={stat.label} style={{ padding: "16px" }}>
                 <div style={{ fontSize: "12px", textTransform: "uppercase", color: "#64748b" }}>{stat.label}</div>
@@ -562,8 +567,10 @@ export default function SilentAuction() {
 
         <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
           <div style={{ display: "flex", gap: "12px", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap" }}>
+
             <Panel style={{ padding: "8px", flex: 1, overflowX: "auto" }}>
               <div style={{ display: "flex", gap: "8px", minWidth: "max-content" }}>
+
                 <button style={tabButtonStyle("items")} onClick={() => setCurrentTab("items")}><Gavel size={16} style={{ marginRight: 6, verticalAlign: "middle" }} />Items</button>
                 <button style={tabButtonStyle("dashboard")} onClick={() => setCurrentTab("dashboard")}><LayoutDashboard size={16} style={{ marginRight: 6, verticalAlign: "middle" }} />Dashboard</button>
                 <button style={tabButtonStyle("projector")} onClick={() => setCurrentTab("projector")}><Projector size={16} style={{ marginRight: 6, verticalAlign: "middle" }} />Live Auction Board</button>
