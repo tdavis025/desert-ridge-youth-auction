@@ -572,20 +572,18 @@ export default function SilentAuction() {
               <div style={{ display: "flex", gap: "8px", minWidth: "max-content" }}>
 
                 <button style={tabButtonStyle("items")} onClick={() => setCurrentTab("items")}><Gavel size={16} style={{ marginRight: 6, verticalAlign: "middle" }} />Items</button>
-                <button style={tabButtonStyle("dashboard")} onClick={() => setCurrentTab("dashboard")}><LayoutDashboard size={16} style={{ marginRight: 6, verticalAlign: "middle" }} />Dashboard</button>
-                <button style={tabButtonStyle("projector")} onClick={() => setCurrentTab("projector")}><Projector size={16} style={{ marginRight: 6, verticalAlign: "middle" }} />Live Auction Board</button>
-                <button style={tabButtonStyle("donate")} onClick={() => setCurrentTab("donate")}><ListPlus size={16} style={{ marginRight: 6, verticalAlign: "middle" }} />List Item</button>
-                <button style={tabButtonStyle("register")} onClick={() => setCurrentTab("register")}><QrCode size={16} style={{ marginRight: 6, verticalAlign: "middle" }} />Register</button>
-                <button style={tabButtonStyle("admin")} onClick={handleAdminTabClick}><TabletSmartphone size={16} style={{ marginRight: 6, verticalAlign: "middle" }} />ADMIN</button>
+                <button style={tabButtonStyle("dashboard")} onClick={() => setCurrentTab("dashboard")}><LayoutDashboard size={16} style={{ marginRight: 6, verticalAlign: "middle" }} />Auction Dashboard</button>
+                
+                
                 <button style={tabButtonStyle("winning")} onClick={() => setCurrentTab("winning")}><Gavel size={16} style={{ marginRight: 6, verticalAlign: "middle" }} />Winning</button>
                 <button style={tabButtonStyle("outbid")} onClick={() => setCurrentTab("outbid")}><ArrowUpCircle size={16} style={{ marginRight: 6, verticalAlign: "middle" }} />Outbid</button>
                 <button style={tabButtonStyle("checkout")} onClick={() => setCurrentTab("checkout")}><Download size={16} style={{ marginRight: 6, verticalAlign: "middle" }} />Checkout</button>
+<button style={tabButtonStyle("donate")} onClick={() => setCurrentTab("donate")}><ListPlus size={16} style={{ marginRight: 6, verticalAlign: "middle" }} />List Item</button>
+                <button style={tabButtonStyle("register")} onClick={() => setCurrentTab("register")}><QrCode size={16} style={{ marginRight: 6, verticalAlign: "middle" }} />Register</button>
+                <button style={tabButtonStyle("admin")} onClick={handleAdminTabClick}><TabletSmartphone size={16} style={{ marginRight: 6, verticalAlign: "middle" }} />ADMIN</button>
               </div>
             </Panel>
-            <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
-              <button style={styles.buttonSecondary} onClick={() => setBiddingClosed((value) => !value)}>{biddingClosed ? "Reopen Bidding" : "Close Bidding"}</button>
-              <button style={styles.buttonSecondary} onClick={exportWinners}><Download size={16} style={{ marginRight: 6, verticalAlign: "middle" }} />Export Winners</button>
-            </div>
+
           </div>
 
           {currentTab === "items" && (
@@ -733,6 +731,28 @@ export default function SilentAuction() {
           {currentTab === "admin" && (
             <Panel style={{ padding: "20px" }}>
               <h3 style={{ marginTop: 0 }}>Admin Controls</h3>
+<div style={{ display: "flex", gap: "12px", flexWrap: "wrap", marginBottom: "16px" }}>
+  <button style={styles.buttonSecondary} onClick={() => setCurrentTab("projector")}>
+    <Projector size={16} style={{ marginRight: 6, verticalAlign: "middle" }} />
+    Live Auction Board
+  </button>
+  <button style={styles.buttonSecondary} onClick={() => setBiddingClosed((value) => !value)}>
+    {biddingClosed ? "Reopen Bidding" : "Close Bidding"}
+  </button>
+  <button style={styles.buttonSecondary} onClick={exportWinners}>
+    <Download size={16} style={{ marginRight: 6, verticalAlign: "middle" }} />
+    Export Winners
+  </button>
+</div>
+
+<div style={{ display: "flex", gap: "12px", flexWrap: "wrap", marginBottom: "16px" }}>
+  <div style={{ background: "#f8fafc", borderRadius: "12px", padding: "10px 12px", color: "#475569", fontSize: "14px" }}>
+    Auction status: <strong>{biddingClosed ? "Closed" : "Open"}</strong>
+  </div>
+  <div style={{ background: "#f8fafc", borderRadius: "12px", padding: "10px 12px", color: "#475569", fontSize: "14px" }}>
+    Time left: <strong>{remainingMinutes}:{String(remainingSeconds).padStart(2, "0")}</strong>
+  </div>
+</div>
               <p style={{ color: "#475569" }}>Use this on a leader&apos;s tablet to help members who want assistance. Enter their bidder number, then open any item and place bids on their behalf.</p>
               <div style={{ display: "grid", gap: "16px", gridTemplateColumns: "240px 1fr", alignItems: "end" }}>
                 <div><label style={{ display: "block", marginBottom: "6px", fontWeight: 600 }}>Active bidder number</label><input style={styles.input} value={tabletBidderNumber} onChange={(e) => setTabletBidderNumber(e.target.value.replace(/[^0-9]/g, ""))} placeholder="Enter bidder #" /></div>
