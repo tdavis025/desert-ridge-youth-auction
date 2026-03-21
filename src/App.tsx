@@ -342,7 +342,14 @@ const myItems = useMemo(
   const remainingMinutes = Math.floor(timeRemainingMs / 60000);
   const remainingSeconds = Math.floor((timeRemainingMs % 60000) / 1000);
   const isInSoftCloseWindow = timeRemainingMs > 0 && timeRemainingMs <= softCloseWindowMinutes * 60 * 1000;
-  const registrationUrl = "https://desert-ridge-ward-youth-auction.example/register";
+const registrationUrl =
+  typeof window !== "undefined"
+    ? window.location.origin
+    : "https://desert-ridge-ward-youth-auction.example";
+
+const qrCodeImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(
+  registrationUrl
+)}`;
 
   function handleCheckin() {
     const number = generateBidderNumber();
@@ -749,13 +756,30 @@ const myItems = useMemo(
             <Panel style={{ padding: "20px" }}>
               <h3 style={{ marginTop: 0 }}>Registration QR Code</h3>
               <div style={{ display: "grid", gap: "24px", gridTemplateColumns: "280px 1fr", alignItems: "center" }}>
-                <div style={{ aspectRatio: "1 / 1", display: "flex", alignItems: "center", justifyContent: "center", border: "2px dashed #cbd5e1", borderRadius: "24px", background: "#f8fafc" }}>
-                  <div style={{ textAlign: "center", color: "#64748b" }}><QrCode size={80} style={{ marginBottom: 12 }} /><div style={{ fontWeight: 700 }}>QR Placeholder</div><div style={{ fontSize: "14px" }}>Point this to your live check-in page</div></div>
-                </div>
+                <div
+  style={{
+    aspectRatio: "1 / 1",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    border: "2px solid #cbd5e1",
+    borderRadius: "24px",
+    background: "#ffffff",
+    padding: "16px",
+  }}
+>
+  <img
+    src={qrCodeImageUrl}
+    alt="Registration QR Code"
+    style={{ width: "100%", maxWidth: "260px", height: "auto", borderRadius: "12px" }}
+  />
+</div>
                 <div>
                   <p style={{ color: "#475569" }}>Print this page or display it at the event entrance so guests can scan the code, open the site, and register for an anonymous bidder number.</p>
                   <div style={{ background: "#f8fafc", borderRadius: "16px", padding: "16px" }}><div style={{ color: "#64748b", fontSize: "14px" }}>Registration URL</div><div style={{ marginTop: "4px", fontWeight: 700, wordBreak: "break-all" }}>{registrationUrl}</div></div>
-                  <p style={{ color: "#64748b", fontSize: "14px" }}>In the live version, this QR should be generated from your real deployment URL.</p>
+                  <p style={{ color: "#64748b", fontSize: "14px" }}>
+  This QR code is automatically generated from your current live website URL.
+</p>
                 </div>
               </div>
             </Panel>
