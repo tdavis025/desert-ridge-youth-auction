@@ -329,8 +329,15 @@ const myItems = useMemo(
       .filter((item) => item.highest.bidderNumber !== "—" && String(item.highest.bidderNumber) === String(bidderNumber));
   }, [items, bidderNumber, biddingClosed]);
 
-  const checkoutTotal = useMemo(() => checkoutItems.reduce((sum, item) => sum + Number(item.highest.amount || 0), 0), [checkoutItems]);
+  const checkoutTotal = useMemo(
+  () => checkoutItems.reduce((sum, item) => sum + Number(item.highest.amount || 0), 0),
+  [checkoutItems]
+);
 
+const winningItemsTotal = useMemo(
+  () => winningItems.reduce((sum, item) => sum + Number(item.highest.amount || 0), 0),
+  [winningItems]
+);
   const projectorData = useMemo(() => {
     void leaderboardNow;
     return [...items]
@@ -573,7 +580,7 @@ const qrCodeImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300
 
             {[
   { label: "Items you're winning", value: winningItems.length },
-  { label: "Your bid total", value: formatCurrency(checkoutTotal) }
+  { label: "Bid total from items you're winning", value: formatCurrency(winningItemsTotal) }
 ].map((stat) => (
               <Panel key={stat.label} style={{ padding: "16px" }}>
                 <div style={{ fontSize: "12px", textTransform: "uppercase", color: "#64748b" }}>{stat.label}</div>
