@@ -1,4 +1,5 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { supabase } from "./supabase";
 import {
   ArrowUpCircle,
   Download,
@@ -251,40 +252,99 @@ export default function SilentAuction() {
     image: "",
   });
 
-  useEffect(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) {
-      setItems(JSON.parse(saved));
-    } else {
-      setItems(seedItems);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(seedItems));
-    }
+const loadItems = useCallback(async () => {
+  const { data, error } = await supabase
+    .from("items")
+    .select(`
+      *,
+      bids (
+        amount,
+        bidder_number,
+        created_at
+      )
+    `)
+    .order("created_at", { ascending: false });
 
-    const savedCheckin = localStorage.getItem(CHECKIN_KEY);
-    const savedBidder = localStorage.getItem(BIDDER_KEY);
-    const savedMode = localStorage.getItem(MODE_KEY) as "bid" | "donate" | null;
-    const savedAdminUnlocked = localStorage.getItem(ADMIN_UNLOCK_KEY) === "true";
+  if (error) {
+    console.error("Error loading items from Supabase:", error);
+    setItems(seedItems);
+    return;
+  }
 
-    if (savedCheckin && savedBidder) {
-      setCheckedIn(true);
-      setBidderNumber(savedBidder);
-    }
-    if (savedMode) setMode(savedMode);
-    setAdminUnlocked(savedAdminUnlocked);
-  }, []);
+  const mappedItems: AuctionItem[] = (data || []).map((item) => ({
+    id: item.id,
+    title: item.title,
+    description: item.description,
+    donorFirstName: item.donor_first_name,
+    donorLastName: item.donor_last_name,
+    estimatedRetailValue: Number(item.estimated_retail_value || 0),
+    startingBid: Number(item.starting_bid || 0),
+    image: item.image_url || FALLBACK_IMAGE,
+    bids: (item.bids || []).map((bid: any) => ({
+      amount: Number(bid.amount || 0),
+      bidderNumber: bid.bidder_number,
+      createdAt: bid.created_at,
+    })),
+    createdAt: item.created_at,
+  }));
 
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
-  }, [items]);
+  if (mappedItems.length > 0) {
+    setItems(mappedItems);
+  } else {
+    setItems(seedItems);
+  }
+}, []);
+
+useEffect(() => {
+  const savedCheckin = localStorage.getItem(CHECKIN_KEY);
+  const savedBidder = localStorage.getItem(BIDDER_KEY);
+  const savedMode = localStorage.getItem(MODE_KEY) as "bid" | "donate" | null;
+  const savedAdminUnlocked = localStorage.getItem(ADMIN_UNLOCK_KEY) === "true";
+
+  if (savedCheckin && savedBidder) {
+    setCheckedIn(true);
+    setBidderNumber(savedBidder);
+  }
+  if (savedMode) setMode(savedMode);
+  setAdminUnlocked(savedAdminUnlocked);
+
+  loadItems();
+}, [loadItems]);
+
+ // Items will be stored in Supabase instead of localStorage.
 
   useEffect(() => {
     localStorage.setItem(ADMIN_UNLOCK_KEY, String(adminUnlocked));
   }, [adminUnlocked]);
 
   useEffect(() => {
-    const interval = setInterval(() => setLeaderboardNow(Date.now()), 10000);
-    return () => clearInterval(interval);
-  }, []);
+  const interval = setInterval(() => setLeaderboardNow(Date.now()), 10000);
+  return () => clearInterval(interval);
+}, []);
+
+useEffect(() => {
+  const channel = supabase
+    .channel("auction-realtime")
+    .on(
+      "postgres_changes",
+      { event: "*", schema: "public", table: "items" },
+      () => {
+        loadItems();
+      }
+    )
+    .on(
+      "postgres_changes",
+      { event: "*", schema: "public", table: "bids" },
+      () => {
+        loadItems();
+      }
+    )
+    .subscribe();
+
+  return () => {
+    supabase.removeChannel(channel);
+  };
+}, [loadItems]);
 
   const filteredItems = useMemo(() => {
     const term = search.toLowerCase().trim();
@@ -383,54 +443,80 @@ const qrCodeImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300
     setBidAmount(String(highest + increment));
   }
 
-  function placeBid(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    if (!selectedItem) return;
-    if (biddingClosed) {
-      setStatusMessage("Bidding is currently closed.");
-      return;
-    }
+async function placeBid(e: React.FormEvent<HTMLFormElement>) {
+  e.preventDefault();
+  if (!selectedItem) return;
 
-    const amount = Number(bidAmount);
-    const highest = getHighestBid(selectedItem).amount;
-
-    if (!amount || amount <= highest) {
-      setStatusMessage(`Bid must be higher than ${formatCurrency(highest)}.`);
-      return;
-    }
-
-    const bidderToUse = tabletBidderNumber || bidderNumber || "";
-
-    setItems((prev) =>
-      prev.map((item) =>
-        item.id === selectedItem.id
-          ? {
-              ...item,
-              bids: [
-                ...item.bids,
-                {
-                  amount,
-                  bidderNumber: bidderToUse,
-                  createdAt: new Date().toISOString(),
-                },
-              ],
-            }
-          : item
-      )
-    );
-
-    const msRemainingBeforeBid = auctionEndsAt - Date.now();
-    if (msRemainingBeforeBid <= softCloseWindowMinutes * 60 * 1000) {
-      setAuctionEndsAt(Date.now() + softCloseExtensionMinutes * 60 * 1000);
-      setStatusMessage(`Bid placed successfully on ${selectedItem.title}. You are currently winning at ${formatCurrency(amount)}. Auction extended by ${softCloseExtensionMinutes} minutes.`);
-    } else {
-      setStatusMessage(`Bid placed successfully on ${selectedItem.title}. You are currently winning at ${formatCurrency(amount)}.`);
-    }
-
-    setSelectedItem(null);
-    setBidAmount("");
-    setTabletBidderNumber("");
+  if (biddingClosed) {
+    setStatusMessage("Bidding is currently closed.");
+    return;
   }
+
+  const amount = Number(bidAmount);
+  const highest = getHighestBid(selectedItem).amount;
+
+  if (!amount || amount <= highest) {
+    setStatusMessage(`Bid must be higher than ${formatCurrency(highest)}.`);
+    return;
+  }
+
+  const bidderToUse = tabletBidderNumber || bidderNumber || "";
+
+  const { data, error } = await supabase
+    .from("bids")
+    .insert([
+      {
+        item_id: selectedItem.id,
+        bidder_number: bidderToUse,
+        amount,
+      },
+    ])
+    .select()
+    .single();
+
+  if (error) {
+    console.error("Error saving bid to Supabase:", error);
+    setStatusMessage("There was a problem saving your bid. Please try again.");
+    return;
+  }
+
+  const newBid = {
+    amount: Number(data.amount || 0),
+    bidderNumber: data.bidder_number,
+    createdAt: data.created_at,
+  };
+
+  setItems((prev) =>
+    prev.map((item) =>
+      item.id === selectedItem.id
+        ? {
+            ...item,
+            bids: [...item.bids, newBid],
+          }
+        : item
+    )
+  );
+
+  const msRemainingBeforeBid = auctionEndsAt - Date.now();
+  if (msRemainingBeforeBid <= softCloseWindowMinutes * 60 * 1000) {
+    setAuctionEndsAt(Date.now() + softCloseExtensionMinutes * 60 * 1000);
+    setStatusMessage(
+      `Bid placed successfully on ${selectedItem.title}. You are currently winning at ${formatCurrency(
+        amount
+      )}. Auction extended by ${softCloseExtensionMinutes} minutes.`
+    );
+  } else {
+    setStatusMessage(
+      `Bid placed successfully on ${selectedItem.title}. You are currently winning at ${formatCurrency(
+        amount
+      )}.`
+    );
+  }
+
+  setSelectedItem(null);
+  setBidAmount("");
+  setTabletBidderNumber("");
+}
 
   function handleAdminTabClick() {
     if (adminUnlocked) {
@@ -453,38 +539,83 @@ const qrCodeImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300
     setSubmission((prev) => ({ ...prev, image: dataUrl }));
   }
 
-  function handleDonationSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    const newItem: AuctionItem = {
-      id: crypto.randomUUID(),
-      title: submission.title.trim(),
-      description: submission.description.trim(),
-      donorFirstName: submission.donorFirstName.trim(),
-      donorLastName: submission.donorLastName.trim(),
-      estimatedRetailValue: toNumber(submission.estimatedRetailValue),
-      startingBid: toNumber(submission.startingBid),
-      image: submission.image || FALLBACK_IMAGE,
-      bids: [],
-      createdAt: new Date().toISOString(),
-    };
+  async function handleDonationSubmit(e: React.FormEvent<HTMLFormElement>) {
+  e.preventDefault();
 
-    if (!newItem.title || !newItem.description || !newItem.donorFirstName || !newItem.donorLastName || !newItem.estimatedRetailValue || !newItem.startingBid) {
-      setStatusMessage("Please complete all donation fields before submitting.");
-      return;
-    }
+  const newItem: AuctionItem = {
+    id: crypto.randomUUID(),
+    title: submission.title.trim(),
+    description: submission.description.trim(),
+    donorFirstName: submission.donorFirstName.trim(),
+    donorLastName: submission.donorLastName.trim(),
+    estimatedRetailValue: toNumber(submission.estimatedRetailValue),
+    startingBid: toNumber(submission.startingBid),
+    image: submission.image || FALLBACK_IMAGE,
+    bids: [],
+    createdAt: new Date().toISOString(),
+  };
 
-    setItems((prev) => [newItem, ...prev]);
-    setSubmission({
-      title: "",
-      description: "",
-      donorFirstName: "",
-      donorLastName: "",
-      estimatedRetailValue: "",
-      startingBid: "",
-      image: "",
-    });
-    setStatusMessage(`Donation submitted: ${newItem.title} has been added to the auction.`);
+  if (
+    !newItem.title ||
+    !newItem.description ||
+    !newItem.donorFirstName ||
+    !newItem.donorLastName ||
+    !newItem.estimatedRetailValue ||
+    !newItem.startingBid
+  ) {
+    setStatusMessage("Please complete all donation fields before submitting.");
+    return;
   }
+
+  const { data, error } = await supabase
+    .from("items")
+    .insert([
+      {
+        title: newItem.title,
+        description: newItem.description,
+        donor_first_name: newItem.donorFirstName,
+        donor_last_name: newItem.donorLastName,
+        estimated_retail_value: newItem.estimatedRetailValue,
+        starting_bid: newItem.startingBid,
+        image_url: newItem.image,
+      },
+    ])
+    .select()
+    .single();
+
+  if (error) {
+    console.error("Error saving item to Supabase:", error);
+    setStatusMessage("There was a problem saving your item. Please try again.");
+    return;
+  }
+
+  const savedItem: AuctionItem = {
+    id: data.id,
+    title: data.title,
+    description: data.description,
+    donorFirstName: data.donor_first_name,
+    donorLastName: data.donor_last_name,
+    estimatedRetailValue: Number(data.estimated_retail_value || 0),
+    startingBid: Number(data.starting_bid || 0),
+    image: data.image_url || FALLBACK_IMAGE,
+    bids: [],
+    createdAt: data.created_at,
+  };
+
+  setItems((prev) => [savedItem, ...prev]);
+
+  setSubmission({
+    title: "",
+    description: "",
+    donorFirstName: "",
+    donorLastName: "",
+    estimatedRetailValue: "",
+    startingBid: "",
+    image: "",
+  });
+
+  setStatusMessage(`Donation submitted: ${savedItem.title} has been added to the auction.`);
+}
 
   function exportWinners() {
     const csv = buildWinnerCsv(items);
