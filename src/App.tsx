@@ -542,11 +542,11 @@ export default function SilentAuction() {
           <Panel style={{ padding: "24px" }}>
             <div style={{ display: "flex", justifyContent: "space-between", gap: "16px", alignItems: "center", flexWrap: "wrap" }}>
               <div>
-                <h1 style={{ margin: 0, fontSize: "32px" }}>Church Youth Silent Auction</h1>
-                <p style={{ marginBottom: 0, color: "#475569" }}>Anonymous bidder numbers, live item list, quick bidding, item listing, checkout, and projector mode.</p>
+                <h1 style={{ margin: 0, fontSize: "32px" }}>Desert Ridge Ward Youth Auction</h1>
+                <p style={{ marginBottom: 0, color: "#475569" }}>Help support the youth by bidding and/or donating items below.</p>
               </div>
               <div style={{ background: "#0f172a", color: "white", borderRadius: "18px", padding: "18px 20px", minWidth: "220px" }}>
-                <div style={{ display: "flex", gap: "8px", alignItems: "center", color: "#cbd5e1", fontSize: "14px" }}><UserRound size={16} /> Your bidder number</div>
+                <div style={{ display: "flex", gap: "8px", alignItems: "center", color: "#cbd5e1", fontSize: "14px" }}><UserRound size={16} /> Your bidder number</div>``
                 <div style={{ marginTop: "6px", fontSize: "32px", fontWeight: 700, letterSpacing: "0.2em" }}>#{bidderNumber}</div>
               </div>
             </div>
@@ -554,7 +554,10 @@ export default function SilentAuction() {
 
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))", gap: "16px" }}>
 
-            {[{ label: "Items", value: items.length }, { label: "Total bids", value: totalBids }, { label: "Current value", value: formatCurrency(totalValue) }].map((stat) => (
+            {[
+  { label: "Items you're winning", value: winningItems.length },
+  { label: "Your bid total", value: formatCurrency(checkoutTotal) }
+].map((stat) => (
               <Panel key={stat.label} style={{ padding: "16px" }}>
                 <div style={{ fontSize: "12px", textTransform: "uppercase", color: "#64748b" }}>{stat.label}</div>
                 <div style={{ marginTop: "8px", fontSize: "28px", fontWeight: 700 }}>{stat.value}</div>
@@ -571,16 +574,40 @@ export default function SilentAuction() {
             <Panel style={{ padding: "8px", flex: 1, overflowX: "auto" }}>
               <div style={{ display: "flex", gap: "8px", minWidth: "max-content" }}>
 
-                <button style={tabButtonStyle("items")} onClick={() => setCurrentTab("items")}><Gavel size={16} style={{ marginRight: 6, verticalAlign: "middle" }} />Items</button>
-                <button style={tabButtonStyle("dashboard")} onClick={() => setCurrentTab("dashboard")}><LayoutDashboard size={16} style={{ marginRight: 6, verticalAlign: "middle" }} />Auction Dashboard</button>
-                
-                
-                <button style={tabButtonStyle("winning")} onClick={() => setCurrentTab("winning")}><Gavel size={16} style={{ marginRight: 6, verticalAlign: "middle" }} />Winning</button>
-                <button style={tabButtonStyle("outbid")} onClick={() => setCurrentTab("outbid")}><ArrowUpCircle size={16} style={{ marginRight: 6, verticalAlign: "middle" }} />Outbid</button>
-                <button style={tabButtonStyle("checkout")} onClick={() => setCurrentTab("checkout")}><Download size={16} style={{ marginRight: 6, verticalAlign: "middle" }} />Checkout</button>
-<button style={tabButtonStyle("donate")} onClick={() => setCurrentTab("donate")}><ListPlus size={16} style={{ marginRight: 6, verticalAlign: "middle" }} />List Item</button>
-                <button style={tabButtonStyle("register")} onClick={() => setCurrentTab("register")}><QrCode size={16} style={{ marginRight: 6, verticalAlign: "middle" }} />Register</button>
-                <button style={tabButtonStyle("admin")} onClick={handleAdminTabClick}><TabletSmartphone size={16} style={{ marginRight: 6, verticalAlign: "middle" }} />ADMIN</button>
+                <button style={tabButtonStyle("items")} onClick={() => setCurrentTab("available items")}>
+  <Gavel size={16} style={{ marginRight: 6, verticalAlign: "middle" }} />
+  Available Items
+</button>
+
+<button style={tabButtonStyle("dashboard")} onClick={() => setCurrentTab("dashboard")}>
+  <LayoutDashboard size={16} style={{ marginRight: 6, verticalAlign: "middle" }} />
+  Auction Dashboard
+</button>
+
+<button style={tabButtonStyle("myItems")} onClick={() => setCurrentTab("myItems")}>
+  <Gavel size={16} style={{ marginRight: 6, verticalAlign: "middle" }} />
+  My Items
+</button>
+
+<button style={tabButtonStyle("checkout")} onClick={() => setCurrentTab("checkout")}>
+  <Download size={16} style={{ marginRight: 6, verticalAlign: "middle" }} />
+  Checkout
+</button>
+
+<button style={tabButtonStyle("donate")} onClick={() => setCurrentTab("donate")}>
+  <ListPlus size={16} style={{ marginRight: 6, verticalAlign: "middle" }} />
+  List Item
+</button>
+
+<button style={tabButtonStyle("register")} onClick={() => setCurrentTab("register")}>
+  <QrCode size={16} style={{ marginRight: 6, verticalAlign: "middle" }} />
+  Register
+</button>
+
+<button style={tabButtonStyle("admin")} onClick={handleAdminTabClick}>
+  <TabletSmartphone size={16} style={{ marginRight: 6, verticalAlign: "middle" }} />
+  ADMIN
+</button>
               </div>
             </Panel>
 
