@@ -309,8 +309,18 @@ export default function SilentAuction() {
     });
   }, [items, bidderNumber]);
 
-  const winningItems = useMemo(() => itemsWithLeaderStatus.filter((item) => item.isWinning), [itemsWithLeaderStatus]);
-  const outbidItems = useMemo(() => itemsWithLeaderStatus.filter((item) => item.isOutbid), [itemsWithLeaderStatus]);
+const winningItems = useMemo(
+  () => itemsWithLeaderStatus.filter((item) => item.isWinning),
+  [itemsWithLeaderStatus]
+);
+
+const myItems = useMemo(
+  () =>
+    itemsWithLeaderStatus.filter((item) =>
+      item.bids.some((bid) => String(bid.bidderNumber) === String(bidderNumber))
+    ),
+  [itemsWithLeaderStatus, bidderNumber]
+);
 
   const checkoutItems = useMemo(() => {
     if (!biddingClosed) return [];
@@ -574,7 +584,7 @@ export default function SilentAuction() {
             <Panel style={{ padding: "8px", flex: 1, overflowX: "auto" }}>
               <div style={{ display: "flex", gap: "8px", minWidth: "max-content" }}>
 
-                <button style={tabButtonStyle("items")} onClick={() => setCurrentTab("available items")}>
+              <button style={tabButtonStyle("items")} onClick={() => setCurrentTab("items")}>
   <Gavel size={16} style={{ marginRight: 6, verticalAlign: "middle" }} />
   Available Items
 </button>
@@ -599,10 +609,6 @@ export default function SilentAuction() {
   List Item
 </button>
 
-<button style={tabButtonStyle("register")} onClick={() => setCurrentTab("register")}>
-  <QrCode size={16} style={{ marginRight: 6, verticalAlign: "middle" }} />
-  Register
-</button>
 
 <button style={tabButtonStyle("admin")} onClick={handleAdminTabClick}>
   <TabletSmartphone size={16} style={{ marginRight: 6, verticalAlign: "middle" }} />
@@ -741,7 +747,7 @@ export default function SilentAuction() {
 
           {currentTab === "register" && (
             <Panel style={{ padding: "20px" }}>
-              <h3 style={{ marginTop: 0 }}>QR Code Registration</h3>
+              <h3 style={{ marginTop: 0 }}>Registration QR Code</h3>
               <div style={{ display: "grid", gap: "24px", gridTemplateColumns: "280px 1fr", alignItems: "center" }}>
                 <div style={{ aspectRatio: "1 / 1", display: "flex", alignItems: "center", justifyContent: "center", border: "2px dashed #cbd5e1", borderRadius: "24px", background: "#f8fafc" }}>
                   <div style={{ textAlign: "center", color: "#64748b" }}><QrCode size={80} style={{ marginBottom: 12 }} /><div style={{ fontWeight: 700 }}>QR Placeholder</div><div style={{ fontSize: "14px" }}>Point this to your live check-in page</div></div>
@@ -758,14 +764,22 @@ export default function SilentAuction() {
           {currentTab === "admin" && (
             <Panel style={{ padding: "20px" }}>
               <h3 style={{ marginTop: 0 }}>Admin Controls</h3>
+
 <div style={{ display: "flex", gap: "12px", flexWrap: "wrap", marginBottom: "16px" }}>
   <button style={styles.buttonSecondary} onClick={() => setCurrentTab("projector")}>
     <Projector size={16} style={{ marginRight: 6, verticalAlign: "middle" }} />
     Live Auction Board
   </button>
+
+  <button style={styles.buttonSecondary} onClick={() => setCurrentTab("register")}>
+    <QrCode size={16} style={{ marginRight: 6, verticalAlign: "middle" }} />
+    Registration QR Code
+  </button>
+
   <button style={styles.buttonSecondary} onClick={() => setBiddingClosed((value) => !value)}>
     {biddingClosed ? "Reopen Bidding" : "Close Bidding"}
   </button>
+
   <button style={styles.buttonSecondary} onClick={exportWinners}>
     <Download size={16} style={{ marginRight: 6, verticalAlign: "middle" }} />
     Export Winners
@@ -796,19 +810,56 @@ export default function SilentAuction() {
             </Panel>
           )}
 
-          {currentTab === "winning" && (
-            <Panel style={{ padding: "20px" }}>
-              <h3 style={{ marginTop: 0 }}>Items You&apos;re Winning</h3>
-              {winningItems.length === 0 ? <div style={{ background: "#f8fafc", borderRadius: "16px", padding: "24px", color: "#475569" }}>You are not currently winning any items.</div> : <div style={{ display: "grid", gap: "16px", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))" }}>{winningItems.map((item) => <Panel key={item.id} style={{ overflow: "hidden" }}><div style={{ aspectRatio: "4 / 3", background: "#e2e8f0" }}><img src={item.image} alt={item.title} style={{ width: "100%", height: "100%", objectFit: "cover" }} /></div><div style={{ padding: "20px" }}><div style={{ fontSize: "20px", fontWeight: 700 }}>{item.title}</div><div style={{ marginTop: "10px", border: "1px solid #a7f3d0", background: "#ecfdf5", color: "#047857", borderRadius: "12px", padding: "12px", fontSize: "14px" }}>You are currently winning this item.</div><div style={{ marginTop: "10px", color: "#475569", fontSize: "14px" }}>Current bid: <span style={{ fontWeight: 700 }}>{formatCurrency(item.highest.amount)}</span></div><button style={{ ...actionButtonStyle(biddingClosed), marginTop: "12px" }} onClick={() => openBid(item)} disabled={biddingClosed}>Raise My Bid</button></div></Panel>)}</div>}
-            </Panel>
-          )}
+          {currentTab === "myItems" && (
+  <Panel style={{ padding: "20px" }}>
+    <h3 style={{ marginTop: 0 }}>My Items</h3>
+    {myItems.length === 0 ? (
+      <div style={{ background: "#f8fafc", borderRadius: "16px", padding: "24px", color: "#475569" }}>
+        Items you bid on will show up here.
+      </div>
+    ) : (
+      <div style={{ overflowX: "auto", border: "1px solid #e2e8f0", borderRadius: "16px" }}>
+        <table style={{ width: "100%", minWidth: "760px", borderCollapse: "collapse" }}>
+          <thead style={{ background: "#f8fafc", color: "#64748b", fontSize: "14px" }}>
+            <tr>
+              <th style={{ padding: "12px 16px", textAlign: "left" }}>Item</th>
+              <th style={{ padding: "12px 16px", textAlign: "left" }}>Status</th>
+              <th style={{ padding: "12px 16px", textAlign: "left" }}>Highest Bid</th>
+              <th style={{ padding: "12px 16px", textAlign: "left" }}>Your Highest Bid</th>
+              <th style={{ padding: "12px 16px", textAlign: "left" }}>Total Number of Bids</th>
+            </tr>
+          </thead>
+          <tbody>
+            {myItems.map((item) => {
+              const userBids = item.bids.filter(
+                (bid) => String(bid.bidderNumber) === String(bidderNumber)
+              );
+              const yourHighestBid = userBids.length
+                ? Math.max(...userBids.map((bid) => bid.amount))
+                : 0;
 
-          {currentTab === "outbid" && (
-            <Panel style={{ padding: "20px" }}>
-              <h3 style={{ marginTop: 0 }}>Items You&apos;ve Been Outbid On</h3>
-              {outbidItems.length === 0 ? <div style={{ background: "#f8fafc", borderRadius: "16px", padding: "24px", color: "#475569" }}>You have not been outbid on any items.</div> : <div style={{ display: "grid", gap: "16px", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))" }}>{outbidItems.map((item) => <Panel key={item.id} style={{ overflow: "hidden" }}><div style={{ aspectRatio: "4 / 3", background: "#e2e8f0" }}><img src={item.image} alt={item.title} style={{ width: "100%", height: "100%", objectFit: "cover" }} /></div><div style={{ padding: "20px" }}><div style={{ fontSize: "20px", fontWeight: 700 }}>{item.title}</div><div style={{ marginTop: "10px", border: "1px solid #fde68a", background: "#fffbeb", color: "#b45309", borderRadius: "12px", padding: "12px", fontSize: "14px" }}>You have been outbid on this item.</div><div style={{ marginTop: "10px", color: "#475569", fontSize: "14px" }}>Current bid: <span style={{ fontWeight: 700 }}>{formatCurrency(item.highest.amount)}</span></div><button style={{ ...actionButtonStyle(biddingClosed), marginTop: "12px" }} onClick={() => openBid(item)} disabled={biddingClosed}>Bid Again</button></div></Panel>)}</div>}
-            </Panel>
-          )}
+              return (
+                <tr key={item.id} style={{ borderTop: "1px solid #e2e8f0" }}>
+                  <td style={{ padding: "12px 16px", fontWeight: 700 }}>{item.title}</td>
+                  <td style={{ padding: "12px 16px" }}>
+                    {item.isWinning ? "Winning" : "Outbid"}
+                  </td>
+                  <td style={{ padding: "12px 16px" }}>
+                    {formatCurrency(item.highest.amount)}
+                  </td>
+                  <td style={{ padding: "12px 16px" }}>
+                    {formatCurrency(yourHighestBid)}
+                  </td>
+                  <td style={{ padding: "12px 16px" }}>{item.bids.length}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    )}
+  </Panel>
+)}
 
           {currentTab === "checkout" && (
             <Panel style={{ padding: "20px" }}>
