@@ -323,6 +323,13 @@ useEffect(() => {
 }, []);
 
 useEffect(() => {
+  if (checkedIn && !mode) {
+    setMode("bid");
+    localStorage.setItem(MODE_KEY, "bid");
+  }
+}, [checkedIn, mode]);
+
+useEffect(() => {
   const channel = supabase
     .channel("auction-realtime")
     .on(
@@ -443,14 +450,15 @@ async function handleCheckin() {
     return;
   }
 
-  localStorage.setItem(BIDDER_KEY, number);
-  localStorage.setItem(CHECKIN_KEY, "true");
-
-  setBidderNumber(number);
-  setCheckedIn(true);
-  setStatusMessage(
-    `Welcome${checkinName ? `, ${checkinName}` : ""}. Your bidder number is #${number}.`
-  );
+ localStorage.setItem(BIDDER_KEY, number);
+localStorage.setItem(CHECKIN_KEY, "true");
+localStorage.setItem(MODE_KEY, "bid");
+setBidderNumber(number);
+setCheckedIn(true);
+setMode("bid");
+setStatusMessage(
+  `Welcome${checkinName ? `, ${checkinName}` : ""}. Your anonymous bidder number is #${number}.`
+);
 }
 
   const { error } = await supabase.from("bidders").insert([
@@ -739,10 +747,14 @@ async function exportWinners() {
       <div style={{ ...styles.page, display: "flex", alignItems: "center", justifyContent: "center" }}>
         <Panel style={{ width: "100%", maxWidth: "420px", padding: "24px" }}>
           <h2 style={{ marginTop: 0 }}>Desert Ridge Ward Youth Auction Check-in</h2>
-          <div style={{ marginBottom: "12px" }}>
-            <label style={{ display: "block", marginBottom: "6px", fontWeight: 600 }}>Name (optional)</label>
-            <input style={styles.input} value={checkinName} onChange={(e) => setCheckinName(e.target.value)} placeholder="Enter your name" />
-          </div>
+<div style={{ marginBottom: "12px" }}>
+  <input
+    style={styles.input}
+    value={checkinName}
+    onChange={(e) => setCheckinName(e.target.value)}
+    placeholder="Enter your first and last name"
+  />
+</div>
           <p style={{ color: "#475569", fontSize: "14px", lineHeight: 1.5 }}>
             No login required. Once you check in, you will receive an anonymous bidder number that auto-populates when you bid.
           </p>
@@ -752,26 +764,7 @@ async function exportWinners() {
     );
   }
 
-  if (!mode) {
-    return (
-      <div style={{ ...styles.page, display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <div style={{ width: "100%", maxWidth: "980px", display: "grid", gap: "24px", gridTemplateColumns: "repeat(auto-fit,minmax(300px,1fr))" }}>
-          <Panel style={{ padding: "28px" }}>
-            <div style={{ display: "inline-flex", padding: "12px", background: "#f1f5f9", borderRadius: "16px" }}><Gavel /></div>
-            <h2>I want to bid</h2>
-            <p style={{ color: "#475569" }}>Browse auction items, place bids with your anonymous bidder number, and see whether you are currently winning.</p>
-            <button style={styles.button} onClick={() => chooseMode("bid")}>Continue to Bidding</button>
-          </Panel>
-          <Panel style={{ padding: "28px" }}>
-            <div style={{ display: "inline-flex", padding: "12px", background: "#f1f5f9", borderRadius: "16px" }}><HeartHandshake /></div>
-            <h2>I want to donate</h2>
-            <p style={{ color: "#475569" }}>Submit a good or service for the auction with all the donor and pricing details needed to add it to the catalog.</p>
-            <button style={styles.buttonSecondary} onClick={() => chooseMode("donate")}>Continue to Donation Form</button>
-          </Panel>
-        </div>
-      </div>
-    );
-  }
+// Mode selection removed — defaulting to "bid"
 
   return (
     <div style={styles.page}>
