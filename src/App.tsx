@@ -437,12 +437,14 @@ async function handleCheckin() {
 
   const number = generateBidderNumber();
 
-  const { error } = await supabase.from("bidders").insert([
-    {
-      bidder_number: number,
-      display_name: checkinName.trim() || null,
-    },
-  ]);
+  const { error } = await supabase
+    .from("bidders")
+    .insert([
+      {
+        bidder_number: number,
+        display_name: checkinName.trim() || null,
+      },
+    ]);
 
   if (error) {
     console.error("Error saving bidder to Supabase:", error);
@@ -450,34 +452,14 @@ async function handleCheckin() {
     return;
   }
 
- localStorage.setItem(BIDDER_KEY, number);
-localStorage.setItem(CHECKIN_KEY, "true");
-localStorage.setItem(MODE_KEY, "bid");
-setBidderNumber(number);
-setCheckedIn(true);
-setMode("bid");
-setStatusMessage(
-  `Welcome${checkinName ? `, ${checkinName}` : ""}. Your anonymous bidder number is #${number}.`
-);
-}
-
-  const { error } = await supabase.from("bidders").insert([
-    {
-      bidder_number: number,
-      display_name: checkinName.trim() || null,
-    },
-  ]);
-
-  if (error) {
-    console.error("Error saving bidder to Supabase:", error);
-    setStatusMessage("There was a problem creating your bidder number. Please try again.");
-    return;
-  }
-
   localStorage.setItem(BIDDER_KEY, number);
   localStorage.setItem(CHECKIN_KEY, "true");
+  localStorage.setItem(MODE_KEY, "bid");
+
   setBidderNumber(number);
   setCheckedIn(true);
+  setMode("bid");
+
   setStatusMessage(
     `Welcome${checkinName ? `, ${checkinName}` : ""}. Your anonymous bidder number is #${number}.`
   );
