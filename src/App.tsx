@@ -418,8 +418,40 @@ const qrCodeImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300
   registrationUrl
 )}`;
 
- async function handleCheckin() {
+async function handleCheckin() {
+  const existing = localStorage.getItem(BIDDER_KEY);
+
+  if (existing) {
+    setStatusMessage(`You are already registered as bidder #${existing}.`);
+    setCheckedIn(true);
+    setBidderNumber(existing);
+    return;
+  }
+
   const number = generateBidderNumber();
+
+  const { error } = await supabase.from("bidders").insert([
+    {
+      bidder_number: number,
+      display_name: checkinName.trim() || null,
+    },
+  ]);
+
+  if (error) {
+    console.error("Error saving bidder to Supabase:", error);
+    setStatusMessage("There was a problem creating your bidder number.");
+    return;
+  }
+
+  localStorage.setItem(BIDDER_KEY, number);
+  localStorage.setItem(CHECKIN_KEY, "true");
+
+  setBidderNumber(number);
+  setCheckedIn(true);
+  setStatusMessage(
+    `Welcome${checkinName ? `, ${checkinName}` : ""}. Your bidder number is #${number}.`
+  );
+}
 
   const { error } = await supabase.from("bidders").insert([
     {
