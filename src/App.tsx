@@ -418,14 +418,30 @@ const qrCodeImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300
   registrationUrl
 )}`;
 
-  function handleCheckin() {
-    const number = generateBidderNumber();
-    localStorage.setItem(BIDDER_KEY, number);
-    localStorage.setItem(CHECKIN_KEY, "true");
-    setBidderNumber(number);
-    setCheckedIn(true);
-    setStatusMessage(`Welcome${checkinName ? `, ${checkinName}` : ""}. Your anonymous bidder number is #${number}.`);
+ async function handleCheckin() {
+  const number = generateBidderNumber();
+
+  const { error } = await supabase.from("bidders").insert([
+    {
+      bidder_number: number,
+      display_name: checkinName.trim() || null,
+    },
+  ]);
+
+  if (error) {
+    console.error("Error saving bidder to Supabase:", error);
+    setStatusMessage("There was a problem creating your bidder number. Please try again.");
+    return;
   }
+
+  localStorage.setItem(BIDDER_KEY, number);
+  localStorage.setItem(CHECKIN_KEY, "true");
+  setBidderNumber(number);
+  setCheckedIn(true);
+  setStatusMessage(
+    `Welcome${checkinName ? `, ${checkinName}` : ""}. Your anonymous bidder number is #${number}.`
+  );
+}
 
   function chooseMode(nextMode: "bid" | "donate") {
     setMode(nextMode);
@@ -617,16 +633,53 @@ async function placeBid(e: React.FormEvent<HTMLFormElement>) {
   setStatusMessage(`Donation submitted: ${savedItem.title} has been added to the auction.`);
 }
 
-  function exportWinners() {
-    const csv = buildWinnerCsv(items);
-    const blob = new Blob([csv], { type: "text/csv" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "auction-winners.csv";
-    a.click();
-    URL.revokeObjectURL(url);
+async function exportWinners() {
+  const { data: biddersData, error } = await supabase
+    .from("bidders")
+    .select("*");
+
+  if (error) {
+    console.error("Error loading bidders for winner export:", error);
+    setStatusMessage("There was a problem exporting winners.");
+    return;
   }
+
+  const bidderNameMap = new Map(
+    (biddersData || []).map((bidder) => [
+      String(bidder.bidder_number),
+      bidder.display_name || "",
+    ])
+  );
+
+  const rows = items.map((item) => {
+    const highest = getHighestBid(item);
+    const donor = `${item.donorFirstName || ""} ${item.donorLastName || ""}`.trim();
+    const bidderName =
+      highest.bidderNumber && highest.bidderNumber !== "—"
+        ? bidderNameMap.get(String(highest.bidderNumber)) || ""
+        : "";
+
+    return [
+      `"${item.title.replaceAll('"', '""')}"`,
+      highest.amount,
+      `"${String(highest.bidderNumber || "").replaceAll('"', '""')}"`,
+      `"${String(bidderName).replaceAll('"', '""')}"`,
+      `"${donor.replaceAll('"', '""')}"`,
+    ].join(",");
+  });
+
+  const csv =
+    "Item,Winning Bid,Winner Bidder Number,Winner Name,Donor\n" +
+    rows.join("\n");
+
+  const blob = new Blob([csv], { type: "text/csv" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "auction-winners.csv";
+  a.click();
+  URL.revokeObjectURL(url);
+}
 
   const totalBids = items.reduce((sum, item) => sum + item.bids.length, 0);
   const totalValue = items.reduce((sum, item) => sum + getHighestBid(item).amount, 0);
