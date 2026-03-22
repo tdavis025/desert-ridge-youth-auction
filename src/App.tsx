@@ -940,7 +940,16 @@ async function exportWinners() {
                 <div style={{ gridColumn: "1 / -1" }}>
                   <label style={{ display: "block", marginBottom: "6px", fontWeight: 600 }}>Upload item photo (optional)</label>
                   <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-                    <input type="file" accept="image/*" capture="environment" onChange={async (e) => handleImageUpload(e.target.files?.[0])} />
+                   <label className="text-blue-600 underline cursor-pointer w-fit">
+  Upload photo
+  <input
+    type="file"
+    accept="image/*"
+    capture="environment"
+    onChange={async (e) => handleImageUpload(e.target.files?.[0])}
+    className="hidden"
+  />
+</label>
                     <input style={styles.input} placeholder="Or paste an image URL" value={submission.image} onChange={(e) => setSubmission((prev) => ({ ...prev, image: e.target.value }))} />
                     <p style={{ color: "#64748b", fontSize: "12px" }}>You can upload a photo, take one with your camera, or paste a URL.</p>
                   </div>
