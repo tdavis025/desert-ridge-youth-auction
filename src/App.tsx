@@ -245,6 +245,9 @@ export default function SilentAuction() {
   const [donationSubmitted, setDonationSubmitted] = useState(false);
   const [bidFlash, setBidFlash] = useState(false);
   const [bidConfirmPending, setBidConfirmPending] = useState(false);
+  const [adminBidders, setAdminBidders] = useState<{bidder_number: string, display_name: string}[]>([]);
+  const [adminAssignName, setAdminAssignName] = useState("");
+  const [adminAssignNumber, setAdminAssignNumber] = useState("");
 
   const [submission, setSubmission] = useState<SubmissionForm>({
     title: "",
@@ -299,6 +302,34 @@ const loadItems = useCallback(async () => {
   }
 }, []);
 
+const ADMIN_BIDDER_NUMBERS = Array.from({ length: 20 }, (_, i) => String(i + 1));
+
+const loadAdminBidders = useCallback(async () => {
+  const { data } = await supabase
+    .from("bidders")
+    .select("bidder_number, display_name")
+    .in("bidder_number", ADMIN_BIDDER_NUMBERS);
+  if (data) setAdminBidders(data);
+}, []);
+
+async function handleAdminAssign() {
+  if (!adminAssignName.trim() || !adminAssignNumber) {
+    setStatusMessage("Please enter a name and select a number.");
+    return;
+  }
+  const { error } = await supabase
+    .from("bidders")
+    .insert([{ bidder_number: adminAssignNumber, display_name: adminAssignName.trim() }]);
+  if (error) {
+    setStatusMessage("Error assigning bidder: " + error.message);
+    return;
+  }
+  setStatusMessage(`Bidder #${adminAssignNumber} assigned to ${adminAssignName.trim()}.`);
+  setAdminAssignName("");
+  setAdminAssignNumber("");
+  loadAdminBidders();
+}
+
 useEffect(() => {
   const savedCheckin = localStorage.getItem(CHECKIN_KEY);
   const savedBidder = localStorage.getItem(BIDDER_KEY);
@@ -313,7 +344,8 @@ useEffect(() => {
   setAdminUnlocked(savedAdminUnlocked);
 
   loadItems();
-}, [loadItems]);
+  loadAdminBidders();
+}, [loadItems, loadAdminBidders]);
 
  // Items will be stored in Supabase instead of localStorage.
 
@@ -1056,6 +1088,53 @@ async function exportWinners() {
                   <div style={{ background: "#f8fafc", borderRadius: "12px", padding: "12px" }}><div style={{ color: "#64748b", fontSize: "12px", textTransform: "uppercase" }}>Soft-Close Window</div><div style={{ marginTop: "4px", fontSize: "24px", fontWeight: 700 }}>{softCloseWindowMinutes} min</div></div>
                   <div style={{ background: "#f8fafc", borderRadius: "12px", padding: "12px" }}><div style={{ color: "#64748b", fontSize: "12px", textTransform: "uppercase" }}>Extension</div><div style={{ marginTop: "4px", fontSize: "24px", fontWeight: 700 }}>+{softCloseExtensionMinutes} min</div></div>
                 </div>
+              </div>
+
+              <div style={{ marginTop: "16px", border: "1px solid #e2e8f0", borderRadius: "16px", padding: "16px" }}>
+                <div style={{ fontWeight: 700, fontSize: "16px", marginBottom: "4px" }}>Manual Bidder Assignment</div>
+                <p style={{ color: "#475569", fontSize: "14px", marginTop: 0, marginBottom: "16px" }}>Assign bidder numbers 1–20 to guests who prefer not to use the website. Use "Bid for them" to submit bids on their behalf.</p>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 180px auto", gap: "12px", alignItems: "end", marginBottom: "16px" }}>
+                  <div>
+                    <label style={{ display: "block", marginBottom: "6px", fontWeight: 600 }}>Guest Name</label>
+                    <input style={styles.input} value={adminAssignName} onChange={(e) => setAdminAssignName(e.target.value)} placeholder="Full name" />
+                  </div>
+                  <div>
+                    <label style={{ display: "block", marginBottom: "6px", fontWeight: 600 }}>Bidder Number</label>
+                    <select style={{ ...styles.input, cursor: "pointer" }} value={adminAssignNumber} onChange={(e) => setAdminAssignNumber(e.target.value)}>
+                      <option value="">Select...</option>
+                      {ADMIN_BIDDER_NUMBERS.filter(n => !adminBidders.some(b => String(b.bidder_number) === n)).map(n => (
+                        <option key={n} value={n}>#{n}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <button style={styles.button} onClick={handleAdminAssign}>Assign</button>
+                </div>
+                {adminBidders.length > 0 && (
+                  <div style={{ border: "1px solid #e2e8f0", borderRadius: "12px", overflow: "hidden" }}>
+                    <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                      <thead style={{ background: "#f8fafc", color: "#64748b", fontSize: "14px" }}>
+                        <tr>
+                          <th style={{ padding: "10px 14px", textAlign: "left" }}>#</th>
+                          <th style={{ padding: "10px 14px", textAlign: "left" }}>Name</th>
+                          <th style={{ padding: "10px 14px", textAlign: "left" }}>Action</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {[...adminBidders].sort((a, b) => Number(a.bidder_number) - Number(b.bidder_number)).map(bidder => (
+                          <tr key={bidder.bidder_number} style={{ borderTop: "1px solid #e2e8f0" }}>
+                            <td style={{ padding: "10px 14px", fontWeight: 700 }}>#{bidder.bidder_number}</td>
+                            <td style={{ padding: "10px 14px" }}>{bidder.display_name || "—"}</td>
+                            <td style={{ padding: "10px 14px" }}>
+                              <button style={styles.buttonSecondary} onClick={() => { setTabletBidderNumber(bidder.bidder_number); setCurrentTab("items"); }}>
+                                Bid for them
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
               </div>
             </Panel>
           )}
