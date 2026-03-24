@@ -345,6 +345,10 @@ useEffect(() => {
 
   loadItems();
   loadAdminBidders();
+
+  supabase.from("settings").select("bidding_closed").eq("id", 1).single().then(({ data }) => {
+    if (data) setBiddingClosed(data.bidding_closed);
+  });
 }, [loadItems, loadAdminBidders]);
 
  // Items will be stored in Supabase instead of localStorage.
@@ -380,6 +384,13 @@ useEffect(() => {
       { event: "*", schema: "public", table: "bids" },
       () => {
         loadItems();
+      }
+    )
+    .on(
+      "postgres_changes",
+      { event: "UPDATE", schema: "public", table: "settings" },
+      (payload: any) => {
+        setBiddingClosed(payload.new.bidding_closed);
       }
     )
     .subscribe();
@@ -1078,7 +1089,10 @@ async function exportWinners() {
     Registration QR Code
   </button>
 
-  <button style={styles.buttonSecondary} onClick={() => setBiddingClosed((value) => !value)}>
+  <button style={styles.buttonSecondary} onClick={async () => {
+    const next = !biddingClosed;
+    await supabase.from("settings").update({ bidding_closed: next }).eq("id", 1);
+  }}>
     {biddingClosed ? "Reopen Bidding" : "Close Bidding"}
   </button>
 
