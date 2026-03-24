@@ -245,6 +245,7 @@ export default function SilentAuction() {
   const [donationSubmitted, setDonationSubmitted] = useState(false);
   const [bidFlash, setBidFlash] = useState(false);
   const [bidConfirmPending, setBidConfirmPending] = useState(false);
+  const [recentlyBidItemId, setRecentlyBidItemId] = useState<string | null>(null);
   const [adminBidders, setAdminBidders] = useState<{bidder_number: string, display_name: string}[]>([]);
   const [adminAssignName, setAdminAssignName] = useState("");
   const [adminAssignNumber, setAdminAssignNumber] = useState("");
@@ -382,8 +383,12 @@ useEffect(() => {
     .on(
       "postgres_changes",
       { event: "*", schema: "public", table: "bids" },
-      () => {
+      (payload: any) => {
         loadItems();
+        if (payload.new?.item_id) {
+          setRecentlyBidItemId(payload.new.item_id);
+          setTimeout(() => setRecentlyBidItemId(null), 3000);
+        }
       }
     )
     .on(
@@ -461,7 +466,7 @@ const winningItemsTotal = useMemo(
     void leaderboardNow;
     return [...items]
       .map((item) => ({ ...item, highest: getHighestBid(item) }))
-      .sort((a, b) => b.highest.amount - a.highest.amount);
+      .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
   }, [items, leaderboardNow]);
 
   const timeRemainingMs = Math.max(auctionEndsAt - Date.now(), 0);
@@ -980,27 +985,51 @@ async function exportWinners() {
 
           {currentTab === "projector" && (
             <Panel style={{ background: "#0f172a", color: "white", padding: "32px", border: "none" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", gap: "16px", alignItems: "flex-start", flexWrap: "wrap" }}>
-                <div>
-                  <div style={{ color: "#94a3b8", fontSize: "12px", textTransform: "uppercase", letterSpacing: "0.25em" }}>Live Auction Board</div>
-                  <h2 style={{ marginTop: "8px", fontSize: "40px" }}>Current Highest Bids</h2>
-                  <p style={{ color: "#94a3b8" }}>Auto-refreshes every 10 seconds for projector display.</p>
+              {/* Header */}
+              <div style={{ textAlign: "center", marginBottom: "24px", position: "relative" }}>
+                <button
+                  onClick={() => document.documentElement.requestFullscreen?.()}
+                  style={{ position: "absolute", right: 0, top: 0, ...styles.buttonSecondary, background: "rgba(255,255,255,0.1)", color: "white", borderColor: "rgba(255,255,255,0.2)", fontSize: "13px" }}
+                >
+                  ⛶ Full Screen
+                </button>
+                <div style={{ color: "#94a3b8", fontSize: "13px", textTransform: "uppercase", letterSpacing: "0.25em", marginBottom: "8px" }}>Desert Ridge Youth — Live Auction Board</div>
+                <div style={{ fontSize: "72px", fontWeight: 800, letterSpacing: "0.05em", lineHeight: 1, color: biddingClosed ? "#f87171" : "#ffffff" }}>{countdownDisplay}</div>
+                <div style={{ marginTop: "10px", fontSize: "18px", fontWeight: 600, color: biddingClosed ? "#f87171" : "#4ade80" }}>
+                  {biddingClosed ? "BIDDING CLOSED" : "BIDDING OPEN"}
                 </div>
-                <div style={{ display: "flex", gap: "12px" }}>
-                  <div style={{ background: "rgba(255,255,255,0.1)", borderRadius: "16px", padding: "14px 16px" }}><div style={{ color: "#94a3b8", fontSize: "12px", textTransform: "uppercase" }}>Status</div><div style={{ marginTop: "6px", fontWeight: 700 }}>{biddingClosed ? "Closed" : "Open"}</div></div>
-                  <div style={{ background: "rgba(255,255,255,0.1)", borderRadius: "16px", padding: "14px 16px" }}><div style={{ color: "#94a3b8", fontSize: "12px", textTransform: "uppercase" }}>Time Left</div><div style={{ marginTop: "6px", fontWeight: 700 }}>{countdownDisplay}</div></div>
-                </div>
+                {isInSoftCloseWindow && <div style={{ marginTop: "12px", display: "inline-block", border: "1px solid rgba(251,191,36,0.5)", background: "rgba(251,191,36,0.1)", color: "#fde68a", borderRadius: "12px", padding: "8px 16px", fontSize: "14px" }}>Soft-close active — new bids extend by {softCloseExtensionMinutes} min</div>}
               </div>
-              {isInSoftCloseWindow && <div style={{ marginTop: "16px", marginBottom: "16px", border: "1px solid rgba(251,191,36,0.35)", background: "rgba(251,191,36,0.1)", color: "#fde68a", borderRadius: "16px", padding: "14px 16px" }}>Soft-close window is active. Any new bid extends the auction by {softCloseExtensionMinutes} minutes.</div>}
-              <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-                {projectorData.map((item, index) => (
-                  <div key={item.id} style={{ display: "grid", gridTemplateColumns: "70px 1.6fr 1fr 1fr", gap: "16px", alignItems: "center", background: "rgba(255,255,255,0.05)", borderRadius: "18px", padding: "18px 20px" }}>
-                    <div style={{ fontSize: "34px", fontWeight: 700, color: "#cbd5e1" }}>{index + 1}</div>
-                    <div><div style={{ fontSize: "28px", fontWeight: 700 }}>{item.title}</div><div style={{ color: "#94a3b8", fontSize: "14px" }}>Starting at {formatCurrency(item.startingBid)}</div></div>
-                    <div><div style={{ color: "#94a3b8", fontSize: "12px", textTransform: "uppercase", letterSpacing: "0.18em" }}>High Bid</div><div style={{ fontSize: "34px", fontWeight: 700 }}>{formatCurrency(item.highest.amount)}</div></div>
-                    <div><div style={{ color: "#94a3b8", fontSize: "12px", textTransform: "uppercase", letterSpacing: "0.18em" }}>Bidder #</div><div style={{ fontSize: "34px", fontWeight: 700 }}>{item.highest.bidderNumber === "—" ? "—" : `#${item.highest.bidderNumber}`}</div></div>
-                  </div>
-                ))}
+
+
+              {/* Scrolling items */}
+              <div className="projector-scroll-container" style={{ height: "600px" }}>
+                <div
+                  className="projector-scroll-inner"
+                  style={{ animationDuration: `${projectorData.length * 4}s` }}
+                >
+                  {[...projectorData, ...projectorData].map((item, index) => (
+                    <div
+                      key={`${item.id}-${index}`}
+                      className={`projector-item${recentlyBidItemId === item.id ? " bid-flash" : ""}`}
+                      style={{ display: "grid", gridTemplateColumns: "60px 1.6fr 1fr 1fr", gap: "16px", alignItems: "center", borderRadius: "18px", padding: "18px 24px", marginBottom: "10px" }}
+                    >
+                      <div style={{ fontSize: "28px", fontWeight: 700, color: "#475569" }}>#{itemNumberMap.get(item.id) ?? index + 1}</div>
+                      <div>
+                        <div style={{ fontSize: "26px", fontWeight: 700 }}>{item.title}</div>
+                        <div style={{ color: "#94a3b8", fontSize: "14px", marginTop: "2px" }}>Starting at {formatCurrency(item.startingBid)}</div>
+                      </div>
+                      <div>
+                        <div style={{ color: "#94a3b8", fontSize: "12px", textTransform: "uppercase", letterSpacing: "0.15em" }}>High Bid</div>
+                        <div style={{ fontSize: "30px", fontWeight: 700, color: "#4ade80" }}>{formatCurrency(item.highest.amount)}</div>
+                      </div>
+                      <div>
+                        <div style={{ color: "#94a3b8", fontSize: "12px", textTransform: "uppercase", letterSpacing: "0.15em" }}>Bidder #</div>
+                        <div style={{ fontSize: "30px", fontWeight: 700 }}>{item.highest.bidderNumber === "—" ? "—" : `#${item.highest.bidderNumber}`}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             </Panel>
           )}
