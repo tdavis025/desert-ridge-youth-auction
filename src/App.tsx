@@ -694,6 +694,23 @@ async function placeBid() {
   setDonationSubmitted(true);
 }
 
+async function handleResetAuction() {
+  const confirmed = window.prompt('This will permanently delete ALL items, bids, and bidders from Supabase. Type "RESET" to confirm.');
+  if (confirmed !== "RESET") {
+    setStatusMessage("Reset cancelled.");
+    return;
+  }
+
+  const { error: bidsError } = await supabase.from("bids").delete().neq("id", "00000000-0000-0000-0000-000000000000");
+  if (bidsError) { setStatusMessage("Error deleting bids: " + bidsError.message); return; }
+
+  const { error: itemsError } = await supabase.from("items").delete().neq("id", "00000000-0000-0000-0000-000000000000");
+  if (itemsError) { setStatusMessage("Error deleting items: " + itemsError.message); return; }
+
+  setItems([]);
+  setStatusMessage("Auction has been reset. All items and bids have been cleared.");
+}
+
 async function exportWinners() {
   const { data: biddersData, error } = await supabase
     .from("bidders")
@@ -1065,6 +1082,10 @@ async function exportWinners() {
   <button style={styles.buttonSecondary} onClick={exportWinners}>
     <Download size={16} style={{ marginRight: 6, verticalAlign: "middle" }} />
     Export Winners
+  </button>
+
+  <button style={{ ...styles.buttonSecondary, borderColor: "#fca5a5", color: "#dc2626" }} onClick={handleResetAuction}>
+    Reset Auction
   </button>
 </div>
 
