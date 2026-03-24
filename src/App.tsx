@@ -241,6 +241,7 @@ export default function SilentAuction() {
   const [checkinName, setCheckinName] = useState("");
   const [currentTab, setCurrentTab] = useState("items");
   const [adminUnlocked, setAdminUnlocked] = useState(false);
+  const [donationSubmitted, setDonationSubmitted] = useState(false);
 
   const [submission, setSubmission] = useState<SubmissionForm>({
     title: "",
@@ -653,6 +654,7 @@ async function placeBid(e: React.FormEvent<HTMLFormElement>) {
   });
 
   setStatusMessage(`Donation submitted: ${savedItem.title} has been added to the auction.`);
+  setDonationSubmitted(true);
 }
 
 async function exportWinners() {
@@ -789,7 +791,7 @@ async function exportWinners() {
             <Panel style={{ padding: "8px", flex: 1, overflowX: "auto" }}>
               <div style={{ display: "flex", gap: "8px", minWidth: "max-content" }}>
 
-<button style={tabButtonStyle("donate")} onClick={() => setCurrentTab("donate")}>
+<button style={tabButtonStyle("donate")} onClick={() => { setCurrentTab("donate"); setDonationSubmitted(false); }}>
   <ListPlus size={16} style={{ marginRight: 6, verticalAlign: "middle" }} />
   List/Donate Item
 </button>
@@ -929,6 +931,16 @@ async function exportWinners() {
 
           {currentTab === "donate" && (
             <Panel style={{ padding: "20px" }}>
+              {donationSubmitted ? (
+                <div style={{ textAlign: "center", padding: "40px 20px" }}>
+                  <div style={{ fontSize: "48px", marginBottom: "16px" }}>🎉</div>
+                  <h3 style={{ marginTop: 0, fontSize: "24px" }}>Thanks for your donation!</h3>
+                  <p style={{ color: "#475569", fontSize: "16px", marginBottom: "24px" }}>You can now view your item in the Available Items section.</p>
+                  <button style={styles.button} onClick={() => { setDonationSubmitted(false); setCurrentTab("items"); }}>View Available Items</button>
+                  <button style={{ ...styles.buttonSecondary, marginLeft: "12px" }} onClick={() => setDonationSubmitted(false)}>Donate Another Item</button>
+                </div>
+              ) : (
+              <>
               <h3 style={{ marginTop: 0 }}>List an Item or Service</h3>
               <form onSubmit={handleDonationSubmit} style={{ display: "grid", gap: "16px", gridTemplateColumns: "repeat(2, minmax(0, 1fr))" }}>
                 <div style={{ gridColumn: "1 / -1" }}><label style={{ display: "block", marginBottom: "6px", fontWeight: 600 }}>Item name</label><input style={styles.input} value={submission.title} onChange={(e) => setSubmission((prev) => ({ ...prev, title: e.target.value }))} /></div>
@@ -956,6 +968,8 @@ async function exportWinners() {
                 </div>
                 <div style={{ gridColumn: "1 / -1", display: "flex", justifyContent: "flex-end" }}><button type="submit" style={styles.button}>Submit Donation</button></div>
               </form>
+              </>
+              )}
             </Panel>
           )}
 
