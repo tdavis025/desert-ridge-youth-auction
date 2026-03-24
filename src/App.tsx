@@ -236,7 +236,7 @@ export default function SilentAuction() {
   const [statusMessage, setStatusMessage] = useState("");
   const [leaderboardNow, setLeaderboardNow] = useState(Date.now());
   const [tabletBidderNumber, setTabletBidderNumber] = useState("");
-  const [auctionEndsAt, setAuctionEndsAt] = useState<number>(() => Date.now() + 1000 * 60 * 15);
+  const [auctionEndsAt, setAuctionEndsAt] = useState<number>(() => new Date("2026-05-02T19:30:00").getTime());
   const [softCloseWindowMinutes] = useState(2);
   const [softCloseExtensionMinutes] = useState(2);
   const [checkinName, setCheckinName] = useState("");
