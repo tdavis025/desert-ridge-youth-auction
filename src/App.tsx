@@ -985,9 +985,9 @@ async function exportWinners() {
           )}
 
           {currentTab === "projector" && (
-            <Panel ref={projectorRef} style={{ background: "#0f172a", color: "white", padding: "32px", border: "none" }}>
+            <Panel ref={projectorRef} style={{ background: "#0f172a", color: "white", padding: "0", border: "none", overflow: "hidden" }}>
               {/* Header */}
-              <div style={{ textAlign: "center", marginBottom: "24px", position: "relative" }}>
+              <div style={{ textAlign: "center", padding: "28px 32px 24px", position: "relative", background: "#1e293b", borderBottom: "2px solid #334155" }}>
                 <button
                   onClick={() => projectorRef.current?.requestFullscreen?.()}
                   style={{ position: "absolute", right: 0, top: 0, ...styles.buttonSecondary, background: "rgba(255,255,255,0.1)", color: "white", borderColor: "rgba(255,255,255,0.2)", fontSize: "13px" }}
@@ -1004,7 +1004,7 @@ async function exportWinners() {
 
 
               {/* Scrolling items */}
-              <div className="projector-scroll-container" style={{ height: "600px" }}>
+              <div className="projector-scroll-container" style={{ height: "600px", padding: "16px 32px 0" }}>
                 <div
                   className="projector-scroll-inner"
                   style={{ animationDuration: `${projectorData.length * 8}s` }}
