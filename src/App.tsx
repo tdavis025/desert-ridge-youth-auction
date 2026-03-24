@@ -400,6 +400,11 @@ useEffect(() => {
   };
 }, [loadItems]);
 
+  const itemNumberMap = useMemo(() => {
+    const sorted = [...items].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+    return new Map(sorted.map((item, i) => [item.id, i + 1]));
+  }, [items]);
+
   const filteredItems = useMemo(() => {
     const term = search.toLowerCase().trim();
     if (!term) return items;
@@ -916,7 +921,10 @@ async function exportWinners() {
                       <div style={{ aspectRatio: "4 / 3", background: "#e2e8f0" }}><img src={item.image} alt={item.title} style={{ width: "100%", height: "100%", objectFit: "cover" }} /></div>
                       <div style={{ padding: "20px" }}>
                         <div style={{ display: "flex", justifyContent: "space-between", gap: "12px", alignItems: "flex-start" }}>
-                          <h3 style={{ marginTop: 0 }}>{item.title}</h3>
+                          <h3 style={{ marginTop: 0 }}>
+                            <span style={{ color: "#94a3b8", fontWeight: 600, fontSize: "14px", marginRight: "6px" }}>#{itemNumberMap.get(item.id)}</span>
+                            {item.title}
+                          </h3>
                           <span style={styles.badge}>{item.bids.length ? `${item.bids.length} bids` : "No bids yet"}</span>
                         </div>
                         <p style={{ color: "#475569", fontSize: "14px" }}>{item.description}</p>
