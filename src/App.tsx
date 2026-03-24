@@ -789,6 +789,11 @@ async function exportWinners() {
             <Panel style={{ padding: "8px", flex: 1, overflowX: "auto" }}>
               <div style={{ display: "flex", gap: "8px", minWidth: "max-content" }}>
 
+<button style={tabButtonStyle("donate")} onClick={() => setCurrentTab("donate")}>
+  <ListPlus size={16} style={{ marginRight: 6, verticalAlign: "middle" }} />
+  List/Donate Item
+</button>
+
               <button style={tabButtonStyle("items")} onClick={() => setCurrentTab("items")}>
   <Gavel size={16} style={{ marginRight: 6, verticalAlign: "middle" }} />
   Available Items
@@ -807,11 +812,6 @@ async function exportWinners() {
 <button style={tabButtonStyle("checkout")} onClick={() => setCurrentTab("checkout")}>
   <Download size={16} style={{ marginRight: 6, verticalAlign: "middle" }} />
   Checkout
-</button>
-
-<button style={tabButtonStyle("donate")} onClick={() => setCurrentTab("donate")}>
-  <ListPlus size={16} style={{ marginRight: 6, verticalAlign: "middle" }} />
-  List Item
 </button>
 
 
