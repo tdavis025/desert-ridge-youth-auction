@@ -1202,7 +1202,9 @@ async function exportWinners() {
 
               return (
                 <tr key={item.id} style={{ borderTop: "1px solid #e2e8f0" }}>
-                  <td style={{ padding: "12px 16px", fontWeight: 700 }}>{item.title}</td>
+                  <td style={{ padding: "12px 16px", fontWeight: 700 }}>
+                    <span style={{ color: "#2563eb", cursor: "pointer", textDecoration: "underline" }} onClick={() => { setCurrentTab("items"); openBid(item); }}>{item.title}</span>
+                  </td>
                   <td style={{ padding: "12px 16px" }}>
                     {item.isWinning ? "Winning" : "Outbid"}
                   </td>
