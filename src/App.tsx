@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
+import './App.css';
 import { supabase } from "./supabase";
 import {
   ArrowUpCircle,
@@ -242,6 +243,8 @@ export default function SilentAuction() {
   const [currentTab, setCurrentTab] = useState("items");
   const [adminUnlocked, setAdminUnlocked] = useState(false);
   const [donationSubmitted, setDonationSubmitted] = useState(false);
+  const [bidFlash, setBidFlash] = useState(false);
+  const [bidConfirmPending, setBidConfirmPending] = useState(false);
 
   const [submission, setSubmission] = useState<SubmissionForm>({
     title: "",
@@ -480,11 +483,13 @@ async function handleCheckin() {
     if (!selectedItem) return;
     const highest = getHighestBid(selectedItem).amount;
     setBidAmount(String(highest + increment));
+    setBidFlash(false);
+    requestAnimationFrame(() => requestAnimationFrame(() => setBidFlash(true)));
   }
 
-async function placeBid(e: React.FormEvent<HTMLFormElement>) {
-  e.preventDefault();
+async function placeBid() {
   if (!selectedItem) return;
+  setBidConfirmPending(false);
 
   if (biddingClosed) {
     setStatusMessage("Bidding is currently closed.");
@@ -1118,16 +1123,31 @@ async function exportWinners() {
           <div style={{ position: "fixed", inset: 0, background: "rgba(15,23,42,0.45)", display: "flex", alignItems: "center", justifyContent: "center", padding: "20px", zIndex: 1000 }} onClick={() => setSelectedItem(null)}>
             <div style={{ ...styles.card, width: "100%", maxWidth: "560px", padding: "24px" }} onClick={(e) => e.stopPropagation()}>
               <h3 style={{ marginTop: 0 }}>Place a bid</h3>
-              <form onSubmit={placeBid} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+              <form onSubmit={(e) => e.preventDefault()} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
                 <div style={{ background: "#f8fafc", borderRadius: "16px", padding: "16px" }}><div style={{ color: "#64748b", fontSize: "14px" }}>Item</div><div style={{ fontSize: "20px", fontWeight: 700 }}>{selectedItem.title}</div></div>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
                   <div><label style={{ display: "block", marginBottom: "6px", fontWeight: 600 }}>Bidder number</label><input style={{ ...styles.input, background: "#f8fafc" }} value={`#${tabletBidderNumber || bidderNumber || ""}`} readOnly /></div>
                   <div><label style={{ display: "block", marginBottom: "6px", fontWeight: 600 }}>Current highest</label><input style={{ ...styles.input, background: "#f8fafc" }} value={formatCurrency(getHighestBid(selectedItem).amount)} readOnly /></div>
                 </div>
-                <div><label style={{ display: "block", marginBottom: "6px", fontWeight: 600 }}>Your bid amount</label><input style={styles.input} type="number" min={getHighestBid(selectedItem).amount + 1} value={bidAmount} onChange={(e) => setBidAmount(e.target.value)} /><p style={{ color: "#64748b", fontSize: "12px" }}>Bid must be at least {formatCurrency(getHighestBid(selectedItem).amount + 1)}.</p></div>
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "12px" }}>{[1, 5, 10].map((increment) => <button key={increment} type="button" style={styles.buttonSecondary} onClick={() => applyIncrement(increment)}><ArrowUpCircle size={16} style={{ marginRight: 6, verticalAlign: "middle" }} />+{increment}</button>)}</div>
-                <div style={{ display: "flex", justifyContent: "flex-end", gap: "12px" }}><button type="button" style={styles.buttonSecondary} onClick={() => setSelectedItem(null)}>Cancel</button><button type="submit" style={styles.button}>Submit Bid</button></div>
+                <div><label style={{ display: "block", marginBottom: "6px", fontWeight: 600 }}>Your bid amount</label><input className={`bid-amount-input${bidFlash ? " flash" : ""}`} type="number" min={getHighestBid(selectedItem).amount + 1} value={bidAmount} onChange={(e) => setBidAmount(e.target.value)} onAnimationEnd={() => setBidFlash(false)} /><p style={{ color: "#64748b", fontSize: "12px" }}>Bid must be at least {formatCurrency(getHighestBid(selectedItem).amount + 1)}.</p></div>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "12px" }}>{[1, 5, 10, 20].map((increment) => <button key={increment} type="button" style={styles.buttonSecondary} onClick={() => applyIncrement(increment)}><ArrowUpCircle size={16} style={{ marginRight: 6, verticalAlign: "middle" }} />+{increment}</button>)}</div>
+                <div style={{ display: "flex", justifyContent: "flex-end", gap: "12px" }}><button type="button" style={styles.buttonSecondary} onClick={() => setSelectedItem(null)}>Cancel</button><button type="button" style={styles.button} onClick={() => setBidConfirmPending(true)}>Submit Bid</button></div>
               </form>
+            </div>
+          </div>
+        )}
+
+        {bidConfirmPending && selectedItem && (
+          <div style={{ position: "fixed", inset: 0, background: "rgba(15,23,42,0.6)", display: "flex", alignItems: "center", justifyContent: "center", padding: "20px", zIndex: 2000 }}>
+            <div style={{ ...styles.card, width: "100%", maxWidth: "420px", padding: "28px" }}>
+              <h3 style={{ marginTop: 0, marginBottom: "12px" }}>Confirm your bid</h3>
+              <p style={{ color: "#475569", marginBottom: "24px" }}>
+                Are you sure you want to submit a bid for <strong>{selectedItem.title}</strong> for <strong>{formatCurrency(Number(bidAmount))}</strong>?
+              </p>
+              <div style={{ display: "flex", justifyContent: "flex-end", gap: "12px" }}>
+                <button style={styles.buttonSecondary} onClick={() => setBidConfirmPending(false)}>Go Back</button>
+                <button style={styles.button} onClick={() => placeBid()}>Yes, Submit Bid</button>
+              </div>
             </div>
           </div>
         )}
