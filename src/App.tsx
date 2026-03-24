@@ -1076,11 +1076,6 @@ async function exportWinners() {
     Time left: <strong>{remainingMinutes}:{String(remainingSeconds).padStart(2, "0")}</strong>
   </div>
 </div>
-              <p style={{ color: "#475569" }}>Use this on a leader&apos;s tablet to help members who want assistance. Enter their bidder number, then open any item and place bids on their behalf.</p>
-              <div style={{ display: "grid", gap: "16px", gridTemplateColumns: "240px 1fr", alignItems: "end" }}>
-                <div><label style={{ display: "block", marginBottom: "6px", fontWeight: 600 }}>Active bidder number</label><input style={styles.input} value={tabletBidderNumber} onChange={(e) => setTabletBidderNumber(e.target.value.replace(/[^0-9]/g, ""))} placeholder="Enter bidder #" /></div>
-                <div style={{ background: "#f8fafc", borderRadius: "16px", padding: "16px", color: "#475569", fontSize: "14px" }}>When a bidder number is entered here, bids submitted from the bid modal will use that number instead of the current device&apos;s number.</div>
-              </div>
               <div style={{ marginTop: "16px", border: "1px solid #e2e8f0", borderRadius: "16px", padding: "16px" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "12px", fontWeight: 700 }}><TimerReset size={16} /> Auction Timing</div>
                 <div style={{ display: "grid", gap: "12px", gridTemplateColumns: "repeat(3, 1fr)" }}>
