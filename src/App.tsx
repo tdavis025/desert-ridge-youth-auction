@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import './App.css';
 import { supabase } from "./supabase";
 import {
@@ -220,9 +220,9 @@ const styles = {
   } as React.CSSProperties,
 };
 
-function Panel({ children, style }: { children: React.ReactNode; style?: React.CSSProperties }) {
-  return <div style={{ ...styles.card, ...style }}>{children}</div>;
-}
+const Panel = React.forwardRef<HTMLDivElement, { children: React.ReactNode; style?: React.CSSProperties }>(
+  ({ children, style }, ref) => <div ref={ref} style={{ ...styles.card, ...style }}>{children}</div>
+);
 
 export default function SilentAuction() {
   const [items, setItems] = useState<AuctionItem[]>([]);
@@ -246,6 +246,7 @@ export default function SilentAuction() {
   const [bidFlash, setBidFlash] = useState(false);
   const [bidConfirmPending, setBidConfirmPending] = useState(false);
   const [recentlyBidItemId, setRecentlyBidItemId] = useState<string | null>(null);
+  const projectorRef = useRef<HTMLDivElement>(null);
   const [adminBidders, setAdminBidders] = useState<{bidder_number: string, display_name: string}[]>([]);
   const [adminAssignName, setAdminAssignName] = useState("");
   const [adminAssignNumber, setAdminAssignNumber] = useState("");
@@ -984,11 +985,11 @@ async function exportWinners() {
           )}
 
           {currentTab === "projector" && (
-            <Panel style={{ background: "#0f172a", color: "white", padding: "32px", border: "none" }}>
+            <Panel ref={projectorRef} style={{ background: "#0f172a", color: "white", padding: "32px", border: "none" }}>
               {/* Header */}
               <div style={{ textAlign: "center", marginBottom: "24px", position: "relative" }}>
                 <button
-                  onClick={() => document.documentElement.requestFullscreen?.()}
+                  onClick={() => projectorRef.current?.requestFullscreen?.()}
                   style={{ position: "absolute", right: 0, top: 0, ...styles.buttonSecondary, background: "rgba(255,255,255,0.1)", color: "white", borderColor: "rgba(255,255,255,0.2)", fontSize: "13px" }}
                 >
                   ⛶ Full Screen
@@ -1006,7 +1007,7 @@ async function exportWinners() {
               <div className="projector-scroll-container" style={{ height: "600px" }}>
                 <div
                   className="projector-scroll-inner"
-                  style={{ animationDuration: `${projectorData.length * 4}s` }}
+                  style={{ animationDuration: `${projectorData.length * 8}s` }}
                 >
                   {[...projectorData, ...projectorData].map((item, index) => (
                     <div

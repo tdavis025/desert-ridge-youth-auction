@@ -22,6 +22,15 @@
   overflow: hidden;
 }
 
+:fullscreen .projector-scroll-container {
+  height: calc(100vh - 220px) !important;
+}
+
+:fullscreen {
+  background: #0f172a;
+  padding: 32px;
+}
+
 .projector-scroll-inner {
   animation: scrollUp linear infinite;
 }
