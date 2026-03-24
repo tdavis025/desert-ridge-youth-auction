@@ -449,8 +449,11 @@ const winningItemsTotal = useMemo(
   }, [items, leaderboardNow]);
 
   const timeRemainingMs = Math.max(auctionEndsAt - Date.now(), 0);
-  const remainingMinutes = Math.floor(timeRemainingMs / 60000);
-  const remainingSeconds = Math.floor((timeRemainingMs % 60000) / 1000);
+  const remainingDays = Math.floor(timeRemainingMs / (1000 * 60 * 60 * 24));
+  const remainingHours = Math.floor((timeRemainingMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+  const remainingMinutes = Math.floor((timeRemainingMs % (1000 * 60 * 60)) / (1000 * 60));
+  const remainingSeconds = Math.floor((timeRemainingMs % (1000 * 60)) / 1000);
+  const countdownDisplay = `${remainingDays}d ${remainingHours}h ${remainingMinutes}m ${remainingSeconds}s`;
   const isInSoftCloseWindow = timeRemainingMs > 0 && timeRemainingMs <= softCloseWindowMinutes * 60 * 1000;
 const registrationUrl =
   typeof window !== "undefined"
@@ -966,7 +969,7 @@ async function exportWinners() {
                 </div>
                 <div style={{ display: "flex", gap: "12px" }}>
                   <div style={{ background: "rgba(255,255,255,0.1)", borderRadius: "16px", padding: "14px 16px" }}><div style={{ color: "#94a3b8", fontSize: "12px", textTransform: "uppercase" }}>Status</div><div style={{ marginTop: "6px", fontWeight: 700 }}>{biddingClosed ? "Closed" : "Open"}</div></div>
-                  <div style={{ background: "rgba(255,255,255,0.1)", borderRadius: "16px", padding: "14px 16px" }}><div style={{ color: "#94a3b8", fontSize: "12px", textTransform: "uppercase" }}>Time Left</div><div style={{ marginTop: "6px", fontWeight: 700 }}>{remainingMinutes}:{String(remainingSeconds).padStart(2, "0")}</div></div>
+                  <div style={{ background: "rgba(255,255,255,0.1)", borderRadius: "16px", padding: "14px 16px" }}><div style={{ color: "#94a3b8", fontSize: "12px", textTransform: "uppercase" }}>Time Left</div><div style={{ marginTop: "6px", fontWeight: 700 }}>{countdownDisplay}</div></div>
                 </div>
               </div>
               {isInSoftCloseWindow && <div style={{ marginTop: "16px", marginBottom: "16px", border: "1px solid rgba(251,191,36,0.35)", background: "rgba(251,191,36,0.1)", color: "#fde68a", borderRadius: "16px", padding: "14px 16px" }}>Soft-close window is active. Any new bid extends the auction by {softCloseExtensionMinutes} minutes.</div>}
@@ -1094,13 +1097,13 @@ async function exportWinners() {
     Auction status: <strong>{biddingClosed ? "Closed" : "Open"}</strong>
   </div>
   <div style={{ background: "#f8fafc", borderRadius: "12px", padding: "10px 12px", color: "#475569", fontSize: "14px" }}>
-    Time left: <strong>{remainingMinutes}:{String(remainingSeconds).padStart(2, "0")}</strong>
+    Time left: <strong>{countdownDisplay}</strong>
   </div>
 </div>
               <div style={{ marginTop: "16px", border: "1px solid #e2e8f0", borderRadius: "16px", padding: "16px" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "12px", fontWeight: 700 }}><TimerReset size={16} /> Auction Timing</div>
                 <div style={{ display: "grid", gap: "12px", gridTemplateColumns: "repeat(3, 1fr)" }}>
-                  <div style={{ background: "#f8fafc", borderRadius: "12px", padding: "12px" }}><div style={{ color: "#64748b", fontSize: "12px", textTransform: "uppercase" }}>Time Remaining</div><div style={{ marginTop: "4px", fontSize: "24px", fontWeight: 700 }}>{remainingMinutes}:{String(remainingSeconds).padStart(2, "0")}</div></div>
+                  <div style={{ background: "#f8fafc", borderRadius: "12px", padding: "12px" }}><div style={{ color: "#64748b", fontSize: "12px", textTransform: "uppercase" }}>Time Remaining</div><div style={{ marginTop: "4px", fontSize: "18px", fontWeight: 700 }}>{countdownDisplay}</div></div>
                   <div style={{ background: "#f8fafc", borderRadius: "12px", padding: "12px" }}><div style={{ color: "#64748b", fontSize: "12px", textTransform: "uppercase" }}>Soft-Close Window</div><div style={{ marginTop: "4px", fontSize: "24px", fontWeight: 700 }}>{softCloseWindowMinutes} min</div></div>
                   <div style={{ background: "#f8fafc", borderRadius: "12px", padding: "12px" }}><div style={{ color: "#64748b", fontSize: "12px", textTransform: "uppercase" }}>Extension</div><div style={{ marginTop: "4px", fontSize: "24px", fontWeight: 700 }}>+{softCloseExtensionMinutes} min</div></div>
                 </div>
