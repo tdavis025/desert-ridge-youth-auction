@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import './App.css';
 import { supabase } from "./supabase";
+import QRCode from "qrcode";
 import {
   ArrowUpCircle,
   Download,
@@ -742,6 +743,36 @@ async function handleResetAuction() {
   setStatusMessage("Auction has been reset. All items and bids have been cleared.");
 }
 
+async function downloadItemQRDoc() {
+  const realItems = items.filter(i => !seedItems.some(s => s.title === i.title));
+  if (realItems.length === 0) {
+    setStatusMessage("No real items to export.");
+    return;
+  }
+
+  const itemSections = await Promise.all(
+    realItems.map(async (item) => {
+      const itemUrl = `${registrationUrl}?item=${item.id}`;
+      const dataUrl = await QRCode.toDataURL(itemUrl, { width: 300, margin: 2 });
+      return `
+        <div style="page-break-after:always;text-align:center;padding:60px 40px;font-family:Arial,sans-serif;">
+          <h2 style="font-size:28px;margin-bottom:8px;">${item.title}</h2>
+          <p style="color:#555;font-size:14px;margin-bottom:24px;">Scan to place your bid</p>
+          <img src="${dataUrl}" style="width:250px;height:250px;" />
+        </div>`;
+    })
+  );
+
+  const html = `<html><body>${itemSections.join("")}</body></html>`;
+  const blob = new Blob([html], { type: "application/msword" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "item-qr-codes.doc";
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 async function exportWinners() {
   const { data: biddersData, error } = await supabase
     .from("bidders")
@@ -1126,7 +1157,13 @@ async function exportWinners() {
 
           {currentTab === "itemqr" && (
             <Panel style={{ padding: "20px" }}>
-              <h3 style={{ marginTop: 0 }}>Item QR Codes</h3>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "8px" }}>
+                <h3 style={{ marginTop: 0, marginBottom: 0 }}>Item QR Codes</h3>
+                <button style={styles.button} onClick={downloadItemQRDoc}>
+                  <Download size={16} style={{ marginRight: 6, verticalAlign: "middle" }} />
+                  Download Word Doc
+                </button>
+              </div>
               <p style={{ color: "#475569", fontSize: "14px", marginBottom: "20px" }}>Print and place these QR codes next to each physical item. Scanning will take bidders directly to that item's bidding screen.</p>
               {items.filter(i => !seedItems.some(s => s.title === i.title)).length === 0 && (
                 <p style={{ color: "#94a3b8" }}>No real items in the database yet. Add items first.</p>
