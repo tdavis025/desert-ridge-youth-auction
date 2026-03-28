@@ -487,6 +487,11 @@ const qrCodeImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300
 )}`;
 
 async function handleCheckin() {
+  if (!checkinName.trim()) {
+    setStatusMessage("First and last name are required.");
+    return;
+  }
+
   const existing = localStorage.getItem(BIDDER_KEY);
 
   if (existing) {
@@ -821,10 +826,13 @@ async function exportWinners() {
     placeholder="Enter your first and last name"
   />
 </div>
-          <p style={{ color: "#475569", fontSize: "14px", lineHeight: 1.5 }}>
+          <p style={{ color: "#475569", fontSize: "14px", lineHeight: 1.5, marginBottom: "24px" }}>
             No login required. Once you check in, you will be able to donate and/or bid on items. You'll receive an anonymous bidder number that auto-populates when you bid.
           </p>
           <button style={{ ...styles.button, width: "100%" }} onClick={handleCheckin}>Register</button>
+          {statusMessage && (
+            <p style={{ color: "#dc2626", fontSize: "14px", marginTop: "8px" }}>{statusMessage}</p>
+          )}
         </Panel>
       </div>
     );
