@@ -76,19 +76,6 @@ const seedItems: AuctionItem[] = [
     bids: [],
     createdAt: new Date().toISOString(),
   },
-  {
-    id: crypto.randomUUID(),
-    title: "Yard Cleanup Service",
-    description: "Two hours of yard cleanup by the youth group.",
-    donorFirstName: "Youth",
-    donorLastName: "Group",
-    estimatedRetailValue: 60,
-    startingBid: 40,
-    image:
-      "https://images.unsplash.com/photo-1466692476868-aef1dfb1e735?auto=format&fit=crop&w=1200&q=80",
-    bids: [],
-    createdAt: new Date().toISOString(),
-  },
 ];
 
 function generateBidderNumber(): string {
@@ -276,7 +263,6 @@ const loadItems = useCallback(async () => {
 
   if (error) {
     console.error("Error loading items from Supabase:", error);
-    setItems(seedItems);
     return;
   }
 
