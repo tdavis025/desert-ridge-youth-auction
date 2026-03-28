@@ -237,6 +237,7 @@ export default function SilentAuction() {
   const [adminBidders, setAdminBidders] = useState<{bidder_number: string, display_name: string}[]>([]);
   const [adminAssignName, setAdminAssignName] = useState("");
   const [adminAssignNumber, setAdminAssignNumber] = useState("");
+  const [deepLinkItemId, setDeepLinkItemId] = useState<string | null>(null);
 
   const [submission, setSubmission] = useState<SubmissionForm>({
     title: "",
@@ -331,6 +332,10 @@ useEffect(() => {
   if (savedMode) setMode(savedMode);
   setAdminUnlocked(savedAdminUnlocked);
 
+  const params = new URLSearchParams(window.location.search);
+  const itemParam = params.get("item");
+  if (itemParam) setDeepLinkItemId(itemParam);
+
   loadItems();
   loadAdminBidders();
 
@@ -356,6 +361,16 @@ useEffect(() => {
     localStorage.setItem(MODE_KEY, "bid");
   }
 }, [checkedIn, mode]);
+
+useEffect(() => {
+  if (checkedIn && deepLinkItemId && items.length > 0) {
+    const item = items.find((i) => i.id === deepLinkItemId);
+    if (item) {
+      setSelectedItem(item);
+      setDeepLinkItemId(null);
+    }
+  }
+}, [checkedIn, deepLinkItemId, items]);
 
 useEffect(() => {
   const channel = supabase
@@ -1109,6 +1124,29 @@ async function exportWinners() {
             </Panel>
           )}
 
+          {currentTab === "itemqr" && (
+            <Panel style={{ padding: "20px" }}>
+              <h3 style={{ marginTop: 0 }}>Item QR Codes</h3>
+              <p style={{ color: "#475569", fontSize: "14px", marginBottom: "20px" }}>Print and place these QR codes next to each physical item. Scanning will take bidders directly to that item's bidding screen.</p>
+              {items.filter(i => !seedItems.some(s => s.title === i.title)).length === 0 && (
+                <p style={{ color: "#94a3b8" }}>No real items in the database yet. Add items first.</p>
+              )}
+              <div style={{ display: "grid", gap: "24px", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))" }}>
+                {items.filter(i => !seedItems.some(s => s.title === i.title)).map((item) => {
+                  const itemUrl = `${registrationUrl}?item=${item.id}`;
+                  const qr = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(itemUrl)}`;
+                  return (
+                    <div key={item.id} style={{ border: "1px solid #e2e8f0", borderRadius: "16px", padding: "16px", textAlign: "center", background: "#fff" }}>
+                      <img src={qr} alt={`QR for ${item.title}`} style={{ width: "160px", height: "160px" }} />
+                      <div style={{ marginTop: "10px", fontWeight: 700, fontSize: "14px" }}>{item.title}</div>
+                      <div style={{ fontSize: "11px", color: "#94a3b8", marginTop: "4px", wordBreak: "break-all" }}>{itemUrl}</div>
+                    </div>
+                  );
+                })}
+              </div>
+            </Panel>
+          )}
+
           {currentTab === "admin" && (
             <Panel style={{ padding: "20px" }}>
               <h3 style={{ marginTop: 0 }}>Admin Controls</h3>
@@ -1122,6 +1160,11 @@ async function exportWinners() {
   <button style={styles.buttonSecondary} onClick={() => setCurrentTab("register")}>
     <QrCode size={16} style={{ marginRight: 6, verticalAlign: "middle" }} />
     Registration QR Code
+  </button>
+
+  <button style={styles.buttonSecondary} onClick={() => setCurrentTab("itemqr")}>
+    <QrCode size={16} style={{ marginRight: 6, verticalAlign: "middle" }} />
+    Item QR Codes
   </button>
 
   <button style={styles.buttonSecondary} onClick={async () => {
