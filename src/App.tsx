@@ -810,10 +810,10 @@ async function exportWinners() {
       <div style={{ ...styles.page, display: "flex", alignItems: "center", justifyContent: "center" }}>
         <Panel style={{ width: "100%", maxWidth: "420px", padding: "24px" }}>
           <h2 style={{ marginTop: 0 }}>Desert Ridge Ward Youth Auction</h2>
-          <p style={{ color: "#475569", fontSize: "14px", lineHeight: 1.5, marginTop: 0 }}>
+          <p style={{ color: "#475569", fontSize: "14px", lineHeight: 1.5, marginTop: 0, marginBottom: "32px" }}>
             Welcome! This is a silent auction where you can bid on items or make donations to support the youth program.
           </p>
-<div style={{ marginBottom: "12px" }}>
+<div style={{ marginBottom: "24px" }}>
   <input
     style={styles.input}
     value={checkinName}
