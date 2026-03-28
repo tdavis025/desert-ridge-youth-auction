@@ -750,15 +750,21 @@ async function downloadItemQRDoc() {
     return;
   }
 
+  const sorted = [...realItems].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+  const numberMap = new Map(sorted.map((item, i) => [item.id, i + 1]));
+
   const itemSections = await Promise.all(
     realItems.map(async (item) => {
+      const itemNum = numberMap.get(item.id);
       const itemUrl = `${registrationUrl}?item=${item.id}`;
       const dataUrl = await QRCode.toDataURL(itemUrl, { width: 300, margin: 2 });
       return `
         <div style="page-break-after:always;text-align:center;padding:60px 40px;font-family:Arial,sans-serif;">
-          <h2 style="font-size:28px;margin-bottom:8px;">${item.title}</h2>
-          <p style="color:#555;font-size:14px;margin-bottom:24px;">Scan to place your bid</p>
+          <div style="font-size:48px;font-weight:700;margin-bottom:8px;">Item #${itemNum}</div>
+          <div style="font-size:28px;font-weight:700;margin-bottom:8px;">${item.title}</div>
+          <div style="font-size:16px;color:#555;margin-bottom:24px;">${item.description}</div>
           <img src="${dataUrl}" style="width:250px;height:250px;" />
+          <p style="color:#888;font-size:13px;margin-top:16px;">Scan to place your bid</p>
         </div>`;
     })
   );
