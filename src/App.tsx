@@ -809,7 +809,10 @@ async function exportWinners() {
     return (
       <div style={{ ...styles.page, display: "flex", alignItems: "center", justifyContent: "center" }}>
         <Panel style={{ width: "100%", maxWidth: "420px", padding: "24px" }}>
-          <h2 style={{ marginTop: 0 }}>Desert Ridge Ward Youth Auction Check-in</h2>
+          <h2 style={{ marginTop: 0 }}>Desert Ridge Ward Youth Auction</h2>
+          <p style={{ color: "#475569", fontSize: "14px", lineHeight: 1.5, marginTop: 0 }}>
+            Welcome! This is a silent auction where you can bid on items or make donations to support the youth program.
+          </p>
 <div style={{ marginBottom: "12px" }}>
   <input
     style={styles.input}
@@ -819,7 +822,7 @@ async function exportWinners() {
   />
 </div>
           <p style={{ color: "#475569", fontSize: "14px", lineHeight: 1.5 }}>
-            No login required. Once you check in, you will receive an anonymous bidder number that auto-populates when you bid.
+            No login required. Once you check in, you will be able to donate and/or bid on items. You'll receive an anonymous bidder number that auto-populates when you bid.
           </p>
           <button style={{ ...styles.button, width: "100%" }} onClick={handleCheckin}>Register</button>
         </Panel>
@@ -1267,6 +1270,14 @@ async function exportWinners() {
             <Panel style={{ padding: "20px" }}>
               <h3 style={{ marginTop: 0 }}>Auction Checkout</h3>
               {!biddingClosed ? <div style={{ border: "1px solid #fde68a", background: "#fffbeb", color: "#92400e", borderRadius: "16px", padding: "20px" }}>Checkout will appear automatically after the auction is closed.</div> : checkoutItems.length === 0 ? <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}><div style={{ background: "#f8fafc", borderRadius: "16px", padding: "20px", color: "#475569" }}>No winning items were found for bidder #{bidderNumber}.</div><div style={{ border: "1px solid #e2e8f0", borderRadius: "16px", padding: "20px" }}><div style={{ color: "#64748b", fontSize: "14px" }}>Bidder Number</div><div style={{ marginTop: "4px", fontSize: "28px", fontWeight: 700 }}>#{bidderNumber}</div><div style={{ marginTop: "12px", color: "#64748b", fontSize: "14px" }}>Total Due</div><div style={{ marginTop: "4px", fontSize: "38px", fontWeight: 700 }}>$0</div></div></div> : <><div style={{ display: "grid", gap: "16px", gridTemplateColumns: "1fr 280px" }}><div style={{ border: "1px solid #e2e8f0", borderRadius: "16px", padding: "20px" }}><div style={{ color: "#64748b", fontSize: "14px" }}>Bidder Number</div><div style={{ marginTop: "4px", fontSize: "34px", fontWeight: 700 }}>#{bidderNumber}</div><div style={{ marginTop: "14px", color: "#64748b", fontSize: "14px" }}>Items Won</div><div style={{ marginTop: "4px", fontSize: "28px", fontWeight: 700 }}>{checkoutItems.length}</div></div><div style={{ background: "#0f172a", color: "white", borderRadius: "16px", padding: "20px" }}><div style={{ color: "#cbd5e1", fontSize: "14px" }}>Total Due</div><div style={{ marginTop: "8px", fontSize: "42px", fontWeight: 700 }}>{formatCurrency(checkoutTotal)}</div></div></div><div style={{ overflowX: "auto", border: "1px solid #e2e8f0", borderRadius: "16px" }}><table style={{ width: "100%", minWidth: "700px", borderCollapse: "collapse" }}><thead style={{ background: "#f8fafc", color: "#64748b", fontSize: "14px" }}><tr><th style={{ padding: "12px 16px", textAlign: "left" }}>Item</th><th style={{ padding: "12px 16px", textAlign: "left" }}>Winning Bid</th><th style={{ padding: "12px 16px", textAlign: "left" }}>Bidder #</th><th style={{ padding: "12px 16px", textAlign: "left" }}>Donor</th></tr></thead><tbody>{checkoutItems.map((item) => <tr key={item.id} style={{ borderTop: "1px solid #e2e8f0" }}><td style={{ padding: "12px 16px", fontWeight: 700 }}>{item.title}</td><td style={{ padding: "12px 16px" }}>{formatCurrency(item.highest.amount)}</td><td style={{ padding: "12px 16px" }}>#{item.highest.bidderNumber}</td><td style={{ padding: "12px 16px" }}>{item.donorFirstName} {item.donorLastName}</td></tr>)}</tbody></table></div></>}
+              <div style={{ marginTop: "20px", border: "1px solid #e2e8f0", borderRadius: "16px", padding: "20px" }}>
+                <p style={{ margin: "0 0 12px", fontWeight: 600 }}>Want to donate directly to the Desert Ridge Ward youth program?</p>
+                <p style={{ margin: "0 0 10px", color: "#475569", fontSize: "14px" }}>You have 2 options:</p>
+                <ol style={{ margin: 0, paddingLeft: "20px", color: "#475569", fontSize: "14px", display: "flex", flexDirection: "column", gap: "8px" }}>
+                  <li>Donate through <strong>LDS.ORG/Donations</strong>. Be sure to use the <strong>"Local - Youth Camp Registration"</strong> line item on the donation slip.</li>
+                  <li>Send money through <strong>Venmo to Bishop Allen</strong> and label it <strong>Youth Donation</strong>.</li>
+                </ol>
+              </div>
             </Panel>
           )}
         </div>
