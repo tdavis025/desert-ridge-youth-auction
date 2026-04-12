@@ -246,6 +246,7 @@ export default function SilentAuction() {
   const [currentTab, setCurrentTab] = useState("items");
   const [adminUnlocked, setAdminUnlocked] = useState(false);
   const [donationSubmitted, setDonationSubmitted] = useState(false);
+  const [donationSubmitting, setDonationSubmitting] = useState(false);
   const [bidFlash, setBidFlash] = useState(false);
   const [bidConfirmPending, setBidConfirmPending] = useState(false);
   const [recentlyBidItemId, setRecentlyBidItemId] = useState<string | null>(null);
@@ -666,6 +667,8 @@ async function placeBid() {
 
   async function handleDonationSubmit(e: React.FormEvent<HTMLFormElement>) {
   e.preventDefault();
+  if (donationSubmitting) return;
+  setDonationSubmitting(true);
 
   const newItem: AuctionItem = {
     id: crypto.randomUUID(),
@@ -690,6 +693,7 @@ async function placeBid() {
     !newItem.startingBid
   ) {
     setStatusMessage("Please complete all donation fields before submitting.");
+    setDonationSubmitting(false);
     return;
   }
 
@@ -714,6 +718,7 @@ async function placeBid() {
   if (error) {
     console.error("Error saving item to Supabase:", error);
     setStatusMessage("There was a problem saving your item. Please try again.");
+    setDonationSubmitting(false);
     return;
   }
 
@@ -1154,7 +1159,7 @@ async function exportWinners() {
                   </div>
                   <p style={{ color: "#64748b", fontSize: "12px", marginTop: "8px" }}>Choose from your photo library, gallery, or take a new photo with your camera.</p>
                 </div>
-                <div style={{ gridColumn: "1 / -1", display: "flex", justifyContent: "flex-end" }}><button type="submit" style={styles.button}>Submit Donation</button></div>
+                <div style={{ gridColumn: "1 / -1", display: "flex", justifyContent: "flex-end" }}><button type="submit" style={{ ...styles.button, opacity: donationSubmitting ? 0.6 : 1, cursor: donationSubmitting ? "not-allowed" : "pointer" }} disabled={donationSubmitting}>{donationSubmitting ? "Submitting…" : "Submit Donation"}</button></div>
               </form>
               </>
               )}
