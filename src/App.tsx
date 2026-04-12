@@ -32,6 +32,7 @@ type AuctionItem = {
   estimatedRetailValue: number;
   startingBid: number;
   image: string;
+  image2?: string;
   bids: Bid[];
   createdAt: string;
 };
@@ -44,6 +45,7 @@ type SubmissionForm = {
   estimatedRetailValue: string;
   startingBid: string;
   image: string;
+  image2: string;
 };
 
 type HighestBid = {
@@ -118,6 +120,19 @@ function fileToDataUrl(file: File): Promise<string> {
     reader.onerror = reject;
     reader.readAsDataURL(file);
   });
+}
+
+function parseImageUrl(imageUrl: string | null): { image: string; image2?: string } {
+  if (!imageUrl) return { image: FALLBACK_IMAGE };
+  if (imageUrl.startsWith("[")) {
+    try {
+      const parsed = JSON.parse(imageUrl) as string[];
+      return { image: parsed[0] || FALLBACK_IMAGE, image2: parsed[1] || undefined };
+    } catch {
+      return { image: imageUrl };
+    }
+  }
+  return { image: imageUrl };
 }
 
 function buildWinnerCsv(items: AuctionItem[]) {
@@ -248,6 +263,7 @@ export default function SilentAuction() {
     estimatedRetailValue: "",
     startingBid: "",
     image: "",
+    image2: "",
   });
 
 const loadItems = useCallback(async () => {
@@ -276,7 +292,7 @@ const loadItems = useCallback(async () => {
     donorLastName: item.donor_last_name,
     estimatedRetailValue: Number(item.estimated_retail_value || 0),
     startingBid: Number(item.starting_bid || 0),
-    image: item.image_url || FALLBACK_IMAGE,
+    ...parseImageUrl(item.image_url),
     bids: (item.bids || []).map((bid: any) => ({
       amount: Number(bid.amount || 0),
       bidderNumber: bid.bidder_number,
@@ -641,10 +657,11 @@ async function placeBid() {
     }
   }
 
-  async function handleImageUpload(file?: File | null) {
+  async function handleImageUpload(file: File | null | undefined, slot: 1 | 2 = 1) {
     if (!file) return;
     const dataUrl = await fileToDataUrl(file);
-    setSubmission((prev) => ({ ...prev, image: dataUrl }));
+    if (slot === 1) setSubmission((prev) => ({ ...prev, image: dataUrl }));
+    else setSubmission((prev) => ({ ...prev, image2: dataUrl }));
   }
 
   async function handleDonationSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -659,6 +676,7 @@ async function placeBid() {
     estimatedRetailValue: toNumber(submission.estimatedRetailValue),
     startingBid: toNumber(submission.startingBid),
     image: submission.image || FALLBACK_IMAGE,
+    image2: submission.image2 || undefined,
     bids: [],
     createdAt: new Date().toISOString(),
   };
@@ -685,7 +703,9 @@ async function placeBid() {
         donor_last_name: newItem.donorLastName,
         estimated_retail_value: newItem.estimatedRetailValue,
         starting_bid: newItem.startingBid,
-        image_url: newItem.image,
+        image_url: newItem.image2
+          ? JSON.stringify([newItem.image, newItem.image2])
+          : newItem.image,
       },
     ])
     .select()
@@ -705,7 +725,7 @@ async function placeBid() {
     donorLastName: data.donor_last_name,
     estimatedRetailValue: Number(data.estimated_retail_value || 0),
     startingBid: Number(data.starting_bid || 0),
-    image: data.image_url || FALLBACK_IMAGE,
+    ...parseImageUrl(data.image_url),
     bids: [],
     createdAt: data.created_at,
   };
@@ -720,6 +740,7 @@ async function placeBid() {
     estimatedRetailValue: "",
     startingBid: "",
     image: "",
+    image2: "",
   });
 
   setStatusMessage(`Donation submitted: ${savedItem.title} has been added to the auction.`);
@@ -973,7 +994,10 @@ async function exportWinners() {
                   const isOutbid = hasBidOnItem && !isWinning;
                   return (
                     <Panel key={item.id} style={{ overflow: "hidden" }}>
-                      <div style={{ aspectRatio: "4 / 3", background: "#e2e8f0" }}><img src={item.image} alt={item.title} style={{ width: "100%", height: "100%", objectFit: "cover" }} /></div>
+                      <div style={{ aspectRatio: "4 / 3", background: "#e2e8f0", display: "flex" }}>
+                        <img src={item.image} alt={item.title} style={{ width: item.image2 ? "50%" : "100%", height: "100%", objectFit: "cover" }} />
+                        {item.image2 && <img src={item.image2} alt={`${item.title} photo 2`} style={{ width: "50%", height: "100%", objectFit: "cover", borderLeft: "2px solid #fff" }} />}
+                      </div>
                       <div style={{ padding: "20px" }}>
                         <div style={{ display: "flex", justifyContent: "space-between", gap: "12px", alignItems: "flex-start" }}>
                           <h3 style={{ marginTop: 0 }}>
@@ -1105,21 +1129,30 @@ async function exportWinners() {
                 <div><label style={{ display: "block", marginBottom: "6px", fontWeight: 600 }}>Estimated retail value</label><input style={styles.input} type="number" min="1" value={submission.estimatedRetailValue} onChange={(e) => setSubmission((prev) => ({ ...prev, estimatedRetailValue: e.target.value }))} /></div>
                 <div><label style={{ display: "block", marginBottom: "6px", fontWeight: 600 }}>Starting bid</label><input style={styles.input} type="number" min="1" value={submission.startingBid} onChange={(e) => setSubmission((prev) => ({ ...prev, startingBid: e.target.value }))} /></div>
                 <div style={{ gridColumn: "1 / -1" }}>
-                  <label style={{ display: "block", marginBottom: "6px", fontWeight: 600 }}>Upload item photo (optional)</label>
-                  <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-                   <label className="text-blue-600 underline cursor-pointer w-fit">
-  Upload photo
-  <input
-    type="file"
-    accept="image/*"
-    capture="environment"
-    onChange={async (e) => handleImageUpload(e.target.files?.[0])}
-    className="hidden"
-  />
-</label>
-                    <input style={styles.input} placeholder="Or paste an image URL" value={submission.image} onChange={(e) => setSubmission((prev) => ({ ...prev, image: e.target.value }))} />
-                    <p style={{ color: "#64748b", fontSize: "12px" }}>You can upload a photo, take one with your camera, or paste a URL.</p>
+                  <label style={{ display: "block", marginBottom: "6px", fontWeight: 600 }}>Item photos (optional)</label>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: "12px" }}>
+                    {/* Photo 1 */}
+                    <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                      <p style={{ margin: 0, fontSize: "13px", color: "#475569", fontWeight: 500 }}>Photo 1</p>
+                      {submission.image && <img src={submission.image} alt="Preview 1" style={{ width: "100%", aspectRatio: "4/3", objectFit: "cover", borderRadius: "8px", border: "1px solid #e2e8f0" }} />}
+                      <label style={{ display: "inline-block", padding: "8px 14px", background: "#f1f5f9", border: "1px solid #cbd5e1", borderRadius: "8px", cursor: "pointer", fontSize: "14px", textAlign: "center" }}>
+                        {submission.image ? "Change photo" : "Choose photo"}
+                        <input type="file" accept="image/*" onChange={async (e) => handleImageUpload(e.target.files?.[0], 1)} style={{ display: "none" }} />
+                      </label>
+                      {submission.image && <button type="button" onClick={() => setSubmission((prev) => ({ ...prev, image: "" }))} style={{ background: "none", border: "none", color: "#94a3b8", cursor: "pointer", fontSize: "12px", padding: 0, textAlign: "left" }}>Remove</button>}
+                    </div>
+                    {/* Photo 2 */}
+                    <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                      <p style={{ margin: 0, fontSize: "13px", color: "#475569", fontWeight: 500 }}>Photo 2 (optional)</p>
+                      {submission.image2 && <img src={submission.image2} alt="Preview 2" style={{ width: "100%", aspectRatio: "4/3", objectFit: "cover", borderRadius: "8px", border: "1px solid #e2e8f0" }} />}
+                      <label style={{ display: "inline-block", padding: "8px 14px", background: "#f1f5f9", border: "1px solid #cbd5e1", borderRadius: "8px", cursor: "pointer", fontSize: "14px", textAlign: "center" }}>
+                        {submission.image2 ? "Change photo" : "Choose photo"}
+                        <input type="file" accept="image/*" onChange={async (e) => handleImageUpload(e.target.files?.[0], 2)} style={{ display: "none" }} />
+                      </label>
+                      {submission.image2 && <button type="button" onClick={() => setSubmission((prev) => ({ ...prev, image2: "" }))} style={{ background: "none", border: "none", color: "#94a3b8", cursor: "pointer", fontSize: "12px", padding: 0, textAlign: "left" }}>Remove</button>}
+                    </div>
                   </div>
+                  <p style={{ color: "#64748b", fontSize: "12px", marginTop: "8px" }}>Choose from your photo library, gallery, or take a new photo with your camera.</p>
                 </div>
                 <div style={{ gridColumn: "1 / -1", display: "flex", justifyContent: "flex-end" }}><button type="submit" style={styles.button}>Submit Donation</button></div>
               </form>
