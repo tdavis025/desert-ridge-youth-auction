@@ -684,15 +684,14 @@ async function placeBid() {
     createdAt: new Date().toISOString(),
   };
 
-  if (
-    !newItem.title ||
-    !newItem.description ||
-    !newItem.donorFirstName ||
-    !newItem.donorLastName ||
-    !newItem.estimatedRetailValue ||
-    !newItem.startingBid
-  ) {
-    setStatusMessage("Please complete all donation fields before submitting.");
+  const missingFields = [];
+  if (!newItem.title) missingFields.push("item name");
+  if (!newItem.description) missingFields.push("description");
+  if (!newItem.donorFirstName) missingFields.push("donor first name");
+  if (!newItem.donorLastName) missingFields.push("donor last name");
+  if (!newItem.estimatedRetailValue) missingFields.push("estimated retail value");
+  if (missingFields.length > 0) {
+    setStatusMessage(`Please fill in the following before submitting: ${missingFields.join(", ")}.`);
     setDonationSubmitting(false);
     return;
   }
@@ -1012,7 +1011,8 @@ async function exportWinners() {
                           <span style={styles.badge}>{item.bids.length ? `${item.bids.length} bids` : "No bids yet"}</span>
                         </div>
                         <p style={{ color: "#475569", fontSize: "14px" }}>{item.description}</p>
-                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "12px" }}>
+                          <div style={{ background: "#f1f5f9", borderRadius: "12px", padding: "12px" }}><div style={{ color: "#64748b", fontSize: "14px" }}>Retail value</div><div style={{ fontSize: "20px", fontWeight: 700 }}>{formatCurrency(item.estimatedRetailValue)}</div></div>
                           <div style={{ background: "#f1f5f9", borderRadius: "12px", padding: "12px" }}><div style={{ color: "#64748b", fontSize: "14px" }}>Current highest</div><div style={{ fontSize: "20px", fontWeight: 700 }}>{formatCurrency(highest.amount)}</div></div>
                           <div style={{ background: "#f1f5f9", borderRadius: "12px", padding: "12px" }}><div style={{ color: "#64748b", fontSize: "14px" }}>Leading bidder</div><div style={{ fontSize: "20px", fontWeight: 700 }}>{highest.bidderNumber === "—" ? "—" : `#${highest.bidderNumber}`}</div></div>
                         </div>
@@ -1031,11 +1031,10 @@ async function exportWinners() {
             <Panel style={{ padding: "20px" }}>
               <h3 style={{ marginTop: 0 }}>Highest bid dashboard</h3>
               <div style={{ overflowX: "auto" }}>
-                <table style={{ width: "100%", minWidth: "860px", borderCollapse: "separate", borderSpacing: "0 8px" }}>
+                <table style={{ width: "100%", minWidth: "720px", borderCollapse: "separate", borderSpacing: "0 8px" }}>
                   <thead>
                     <tr style={{ color: "#64748b", fontSize: "14px", textAlign: "left" }}>
                       <th style={{ padding: "8px 16px" }}>Item</th>
-                      <th style={{ padding: "8px 16px" }}>Retail Value</th>
                       <th style={{ padding: "8px 16px" }}>Starting Bid</th>
                       <th style={{ padding: "8px 16px" }}>Highest Bid</th>
                       <th style={{ padding: "8px 16px" }}>Highest Bidder #</th>
@@ -1048,7 +1047,6 @@ async function exportWinners() {
                       return (
                         <tr key={item.id} style={{ background: "#f8fafc" }}>
                           <td style={{ padding: "12px 16px", fontWeight: 700 }}>{item.title}</td>
-                          <td style={{ padding: "12px 16px" }}>{formatCurrency(item.estimatedRetailValue)}</td>
                           <td style={{ padding: "12px 16px" }}>{formatCurrency(item.startingBid)}</td>
                           <td style={{ padding: "12px 16px", fontWeight: 700 }}>{formatCurrency(highest.amount)}</td>
                           <td style={{ padding: "12px 16px" }}>{highest.bidderNumber === "—" ? "—" : `#${highest.bidderNumber}`}</td>
@@ -1132,7 +1130,7 @@ async function exportWinners() {
                 <div><label style={{ display: "block", marginBottom: "6px", fontWeight: 600 }}>Donor first name</label><input style={styles.input} value={submission.donorFirstName} onChange={(e) => setSubmission((prev) => ({ ...prev, donorFirstName: e.target.value }))} /></div>
                 <div><label style={{ display: "block", marginBottom: "6px", fontWeight: 600 }}>Donor last name</label><input style={styles.input} value={submission.donorLastName} onChange={(e) => setSubmission((prev) => ({ ...prev, donorLastName: e.target.value }))} /></div>
                 <div><label style={{ display: "block", marginBottom: "6px", fontWeight: 600 }}>Estimated retail value</label><input style={styles.input} type="number" min="1" value={submission.estimatedRetailValue} onChange={(e) => setSubmission((prev) => ({ ...prev, estimatedRetailValue: e.target.value }))} /></div>
-                <div><label style={{ display: "block", marginBottom: "6px", fontWeight: 600 }}>Starting bid</label><input style={styles.input} type="number" min="1" value={submission.startingBid} onChange={(e) => setSubmission((prev) => ({ ...prev, startingBid: e.target.value }))} /></div>
+                <div><label style={{ display: "block", marginBottom: "6px", fontWeight: 600 }}>Starting bid <span style={{ fontWeight: 400, color: "#94a3b8" }}>(optional)</span></label><input style={styles.input} type="number" min="0" value={submission.startingBid} onChange={(e) => setSubmission((prev) => ({ ...prev, startingBid: e.target.value }))} /></div>
                 <div style={{ gridColumn: "1 / -1" }}>
                   <label style={{ display: "block", marginBottom: "6px", fontWeight: 600 }}>Item photos (optional)</label>
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: "12px" }}>
