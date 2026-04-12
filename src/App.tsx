@@ -999,9 +999,9 @@ async function exportWinners() {
                   const isOutbid = hasBidOnItem && !isWinning;
                   return (
                     <Panel key={item.id} style={{ overflow: "hidden" }}>
-                      <div style={{ aspectRatio: "4 / 3", background: "#e2e8f0", display: "flex" }}>
-                        <img src={item.image} alt={item.title} style={{ width: item.image2 ? "50%" : "100%", height: "100%", objectFit: "contain" }} />
-                        {item.image2 && <img src={item.image2} alt={`${item.title} photo 2`} style={{ width: "50%", height: "100%", objectFit: "contain", borderLeft: "2px solid #fff" }} />}
+                      <div style={{ display: "flex", overflow: "hidden" }}>
+                        <img src={item.image} alt={item.title} style={{ width: item.image2 ? "50%" : "100%", display: "block" }} />
+                        {item.image2 && <img src={item.image2} alt={`${item.title} photo 2`} style={{ width: "50%", display: "block", borderLeft: "2px solid #fff" }} />}
                       </div>
                       <div style={{ padding: "20px" }}>
                         <div style={{ display: "flex", justifyContent: "space-between", gap: "12px", alignItems: "flex-start" }}>
