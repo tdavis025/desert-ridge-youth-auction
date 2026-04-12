@@ -1012,7 +1012,7 @@ async function exportWinners() {
                           <span style={styles.badge}>{item.bids.length ? `${item.bids.length} bids` : "No bids yet"}</span>
                         </div>
                         <p style={{ color: "#475569", fontSize: "14px" }}>{item.description}</p>
-                        <p style={{ color: "#94a3b8", fontSize: "13px", marginTop: "-8px" }}>Donated by {item.donorFirstName} {item.donorLastName}</p>
+                        <p style={{ color: "#94a3b8", fontSize: "15px", marginTop: "4px", marginBottom: "16px" }}>Donated by {item.donorFirstName} {item.donorLastName}</p>
                         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "12px" }}>
                           <div style={{ background: "#f1f5f9", borderRadius: "12px", padding: "12px" }}><div style={{ color: "#64748b", fontSize: "14px" }}>Retail value</div><div style={{ fontSize: "20px", fontWeight: 700 }}>{formatCurrency(item.estimatedRetailValue)}</div></div>
                           <div style={{ background: "#f1f5f9", borderRadius: "12px", padding: "12px" }}><div style={{ color: "#64748b", fontSize: "14px" }}>Current highest</div><div style={{ fontSize: "20px", fontWeight: 700 }}>{formatCurrency(highest.amount)}</div></div>
