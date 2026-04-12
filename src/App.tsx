@@ -690,7 +690,6 @@ async function placeBid() {
   if (!newItem.description) missingFields.push("description");
   if (!newItem.donorFirstName) missingFields.push("donor first name");
   if (!newItem.donorLastName) missingFields.push("donor last name");
-  if (!newItem.estimatedRetailValue) missingFields.push("estimated retail value");
   if (missingFields.length > 0) {
     setStatusIsError(true); setStatusMessage(`Please fill in the following before submitting: ${missingFields.join(", ")}.`);
     setDonationSubmitting(false);
@@ -1131,7 +1130,7 @@ async function exportWinners() {
                 <div style={{ gridColumn: "1 / -1" }}><label style={{ display: "block", marginBottom: "6px", fontWeight: 600 }}>Description <span style={{ color: "#ef4444" }}>*</span></label><textarea style={styles.textarea} value={submission.description} onChange={(e) => setSubmission((prev) => ({ ...prev, description: e.target.value }))} /></div>
                 <div><label style={{ display: "block", marginBottom: "6px", fontWeight: 600 }}>Donor first name <span style={{ color: "#ef4444" }}>*</span></label><input style={styles.input} value={submission.donorFirstName} onChange={(e) => setSubmission((prev) => ({ ...prev, donorFirstName: e.target.value }))} /></div>
                 <div><label style={{ display: "block", marginBottom: "6px", fontWeight: 600 }}>Donor last name <span style={{ color: "#ef4444" }}>*</span></label><input style={styles.input} value={submission.donorLastName} onChange={(e) => setSubmission((prev) => ({ ...prev, donorLastName: e.target.value }))} /></div>
-                <div><label style={{ display: "block", marginBottom: "6px", fontWeight: 600 }}>Estimated retail value <span style={{ color: "#ef4444" }}>*</span></label><input style={styles.input} type="number" min="1" value={submission.estimatedRetailValue} onChange={(e) => setSubmission((prev) => ({ ...prev, estimatedRetailValue: e.target.value }))} /></div>
+                <div><label style={{ display: "block", marginBottom: "6px", fontWeight: 600 }}>Estimated retail value <span style={{ fontWeight: 400, color: "#94a3b8" }}>(optional)</span></label><input style={styles.input} type="number" min="0" value={submission.estimatedRetailValue} onChange={(e) => setSubmission((prev) => ({ ...prev, estimatedRetailValue: e.target.value }))} /></div>
                 <div><label style={{ display: "block", marginBottom: "6px", fontWeight: 600 }}>Starting bid <span style={{ fontWeight: 400, color: "#94a3b8" }}>(optional)</span></label><input style={styles.input} type="number" min="0" value={submission.startingBid} onChange={(e) => setSubmission((prev) => ({ ...prev, startingBid: e.target.value }))} /></div>
                 <div style={{ gridColumn: "1 / -1" }}>
                   <label style={{ display: "block", marginBottom: "6px", fontWeight: 600 }}>Item photos (optional)</label>
