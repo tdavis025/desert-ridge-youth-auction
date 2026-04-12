@@ -237,6 +237,7 @@ export default function SilentAuction() {
   const [bidAmount, setBidAmount] = useState("");
   const [search, setSearch] = useState("");
   const [statusMessage, setStatusMessage] = useState("");
+  const [statusIsError, setStatusIsError] = useState(false);
   const [leaderboardNow, setLeaderboardNow] = useState(Date.now());
   const [tabletBidderNumber, setTabletBidderNumber] = useState("");
   const [auctionEndsAt, setAuctionEndsAt] = useState<number>(() => new Date("2026-05-02T19:30:00").getTime());
@@ -321,17 +322,17 @@ const loadAdminBidders = useCallback(async () => {
 
 async function handleAdminAssign() {
   if (!adminAssignName.trim() || !adminAssignNumber) {
-    setStatusMessage("Please enter a name and select a number.");
+    setStatusIsError(true); setStatusMessage("Please enter a name and select a number.");
     return;
   }
   const { error } = await supabase
     .from("bidders")
     .insert([{ bidder_number: adminAssignNumber, display_name: adminAssignName.trim() }]);
   if (error) {
-    setStatusMessage("Error assigning bidder: " + error.message);
+    setStatusIsError(true); setStatusMessage("Error assigning bidder: " + error.message);
     return;
   }
-  setStatusMessage(`Bidder #${adminAssignNumber} assigned to ${adminAssignName.trim()}.`);
+  setStatusIsError(false); setStatusMessage(`Bidder #${adminAssignNumber} assigned to ${adminAssignName.trim()}.`);
   setAdminAssignName("");
   setAdminAssignNumber("");
   loadAdminBidders();
@@ -507,14 +508,14 @@ const qrCodeImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300
 
 async function handleCheckin() {
   if (!checkinName.trim()) {
-    setStatusMessage("First and last name are required.");
+    setStatusIsError(true); setStatusMessage("First and last name are required.");
     return;
   }
 
   const existing = localStorage.getItem(BIDDER_KEY);
 
   if (existing) {
-    setStatusMessage(`You are already registered as bidder #${existing}.`);
+    setStatusIsError(false); setStatusMessage(`You are already registered as bidder #${existing}.`);
     setCheckedIn(true);
     setBidderNumber(existing);
     return;
@@ -533,7 +534,7 @@ async function handleCheckin() {
 
   if (error) {
     console.error("Error saving bidder to Supabase:", error);
-    setStatusMessage("There was a problem creating your bidder number.");
+    setStatusIsError(true); setStatusMessage("There was a problem creating your bidder number.");
     return;
   }
 
@@ -545,7 +546,7 @@ async function handleCheckin() {
   setCheckedIn(true);
   setMode("bid");
 
-  setStatusMessage(
+  setStatusIsError(false); setStatusMessage(
     `Welcome${checkinName ? `, ${checkinName}` : ""}. Your anonymous bidder number is #${number}.`
   );
 }
@@ -573,7 +574,7 @@ async function placeBid() {
   setBidConfirmPending(false);
 
   if (biddingClosed) {
-    setStatusMessage("Bidding is currently closed.");
+    setStatusIsError(true); setStatusMessage("Bidding is currently closed.");
     return;
   }
 
@@ -581,7 +582,7 @@ async function placeBid() {
   const highest = getHighestBid(selectedItem).amount;
 
   if (!amount || amount <= highest) {
-    setStatusMessage(`Bid must be higher than ${formatCurrency(highest)}.`);
+    setStatusIsError(true); setStatusMessage(`Bid must be higher than ${formatCurrency(highest)}.`);
     return;
   }
 
@@ -601,7 +602,7 @@ async function placeBid() {
 
   if (error) {
     console.error("Error saving bid to Supabase:", error);
-    setStatusMessage("There was a problem saving your bid. Please try again.");
+    setStatusIsError(true); setStatusMessage("There was a problem saving your bid. Please try again.");
     return;
   }
 
@@ -625,13 +626,13 @@ async function placeBid() {
   const msRemainingBeforeBid = auctionEndsAt - Date.now();
   if (msRemainingBeforeBid <= softCloseWindowMinutes * 60 * 1000) {
     setAuctionEndsAt(Date.now() + softCloseExtensionMinutes * 60 * 1000);
-    setStatusMessage(
+    setStatusIsError(false); setStatusMessage(
       `Bid placed successfully on ${selectedItem.title}. You are currently winning at ${formatCurrency(
         amount
       )}. Auction extended by ${softCloseExtensionMinutes} minutes.`
     );
   } else {
-    setStatusMessage(
+    setStatusIsError(false); setStatusMessage(
       `Bid placed successfully on ${selectedItem.title}. You are currently winning at ${formatCurrency(
         amount
       )}.`
@@ -652,9 +653,9 @@ async function placeBid() {
     if (pwd === ADMIN_PASSWORD) {
       setAdminUnlocked(true);
       setCurrentTab("admin");
-      setStatusMessage("Admin unlocked.");
+      setStatusIsError(false); setStatusMessage("Admin unlocked.");
     } else if (pwd !== null) {
-      setStatusMessage("Incorrect admin password.");
+      setStatusIsError(true); setStatusMessage("Incorrect admin password.");
     }
   }
 
@@ -691,7 +692,7 @@ async function placeBid() {
   if (!newItem.donorLastName) missingFields.push("donor last name");
   if (!newItem.estimatedRetailValue) missingFields.push("estimated retail value");
   if (missingFields.length > 0) {
-    setStatusMessage(`Please fill in the following before submitting: ${missingFields.join(", ")}.`);
+    setStatusIsError(true); setStatusMessage(`Please fill in the following before submitting: ${missingFields.join(", ")}.`);
     setDonationSubmitting(false);
     return;
   }
@@ -716,7 +717,7 @@ async function placeBid() {
 
   if (error) {
     console.error("Error saving item to Supabase:", error);
-    setStatusMessage("There was a problem saving your item. Please try again.");
+    setStatusIsError(true); setStatusMessage("There was a problem saving your item. Please try again.");
     setDonationSubmitting(false);
     return;
   }
@@ -747,31 +748,31 @@ async function placeBid() {
     image2: "",
   });
 
-  setStatusMessage(`Donation submitted: ${savedItem.title} has been added to the auction.`);
+  setStatusIsError(false); setStatusMessage(`Donation submitted: ${savedItem.title} has been added to the auction.`);
   setDonationSubmitted(true);
 }
 
 async function handleResetAuction() {
   const confirmed = window.prompt('This will permanently delete ALL items, bids, and bidders from Supabase. Type "RESET" to confirm.');
   if (confirmed !== "RESET") {
-    setStatusMessage("Reset cancelled.");
+    setStatusIsError(false); setStatusMessage("Reset cancelled.");
     return;
   }
 
   const { error: bidsError } = await supabase.from("bids").delete().neq("id", "00000000-0000-0000-0000-000000000000");
-  if (bidsError) { setStatusMessage("Error deleting bids: " + bidsError.message); return; }
+  if (bidsError) { setStatusIsError(true); setStatusMessage("Error deleting bids: " + bidsError.message); return; }
 
   const { error: itemsError } = await supabase.from("items").delete().neq("id", "00000000-0000-0000-0000-000000000000");
-  if (itemsError) { setStatusMessage("Error deleting items: " + itemsError.message); return; }
+  if (itemsError) { setStatusIsError(true); setStatusMessage("Error deleting items: " + itemsError.message); return; }
 
   setItems([]);
-  setStatusMessage("Auction has been reset. All items and bids have been cleared.");
+  setStatusIsError(false); setStatusMessage("Auction has been reset. All items and bids have been cleared.");
 }
 
 async function downloadItemQRDoc() {
   const realItems = items.filter(i => !seedItems.some(s => s.title === i.title));
   if (realItems.length === 0) {
-    setStatusMessage("No real items to export.");
+    setStatusIsError(true); setStatusMessage("No real items to export.");
     return;
   }
 
@@ -811,7 +812,7 @@ async function exportWinners() {
 
   if (error) {
     console.error("Error loading bidders for winner export:", error);
-    setStatusMessage("There was a problem exporting winners.");
+    setStatusIsError(true); setStatusMessage("There was a problem exporting winners.");
     return;
   }
 
@@ -936,7 +937,7 @@ async function exportWinners() {
           </div>
         </div>
 
-        {statusMessage && <div style={styles.alert}>{statusMessage}</div>}
+        {statusMessage && <div style={{ ...styles.alert, ...(statusIsError ? { background: "#fef2f2", borderColor: "#fca5a5", color: "#b91c1c" } : {}) }}>{statusMessage}</div>}
 
         <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
           <div style={{ display: "flex", gap: "12px", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap" }}>
@@ -1011,6 +1012,7 @@ async function exportWinners() {
                           <span style={styles.badge}>{item.bids.length ? `${item.bids.length} bids` : "No bids yet"}</span>
                         </div>
                         <p style={{ color: "#475569", fontSize: "14px" }}>{item.description}</p>
+                        <p style={{ color: "#94a3b8", fontSize: "13px", marginTop: "-8px" }}>Donated by {item.donorFirstName} {item.donorLastName}</p>
                         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "12px" }}>
                           <div style={{ background: "#f1f5f9", borderRadius: "12px", padding: "12px" }}><div style={{ color: "#64748b", fontSize: "14px" }}>Retail value</div><div style={{ fontSize: "20px", fontWeight: 700 }}>{formatCurrency(item.estimatedRetailValue)}</div></div>
                           <div style={{ background: "#f1f5f9", borderRadius: "12px", padding: "12px" }}><div style={{ color: "#64748b", fontSize: "14px" }}>Current highest</div><div style={{ fontSize: "20px", fontWeight: 700 }}>{formatCurrency(highest.amount)}</div></div>
