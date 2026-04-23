@@ -154,7 +154,7 @@ function buildWinnerCsv(items: AuctionItem[]) {
 const styles = {
   page: {
     minHeight: "100vh",
-    background: "#f8fafc",
+    background: "#e2e8f0",
     padding: "16px",
     fontFamily: "Arial, sans-serif",
     color: "#0f172a",
