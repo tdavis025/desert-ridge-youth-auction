@@ -168,9 +168,9 @@ const styles = {
   } as React.CSSProperties,
   card: {
     background: "#ffffff",
-    border: "1px solid #e2e8f0",
+    border: "1px solid #cbd5e1",
     borderRadius: "18px",
-    boxShadow: "0 1px 3px rgba(15,23,42,0.08)",
+    boxShadow: "0 4px 12px rgba(15,23,42,0.12)",
   } as React.CSSProperties,
   button: {
     background: "#0f172a",
