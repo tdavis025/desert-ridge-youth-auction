@@ -62,8 +62,7 @@ const MODE_KEY = "church-silent-auction-mode-v5";
 const ADMIN_UNLOCK_KEY = "church-silent-auction-admin-unlocked-v5";
 const ADMIN_PASSWORD = "1988";
 
-const FALLBACK_IMAGE =
-  "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=1200&q=80";
+const FALLBACK_IMAGE = "";
 
 const seedItems: AuctionItem[] = [
   {
@@ -122,12 +121,14 @@ function fileToDataUrl(file: File): Promise<string> {
   });
 }
 
+const OLD_FALLBACK = "https://images.unsplash.com/photo-1516321318423-f06f85e504b3";
+
 function parseImageUrl(imageUrl: string | null): { image: string; image2?: string } {
-  if (!imageUrl) return { image: FALLBACK_IMAGE };
+  if (!imageUrl || imageUrl.includes(OLD_FALLBACK)) return { image: "" };
   if (imageUrl.startsWith("[")) {
     try {
       const parsed = JSON.parse(imageUrl) as string[];
-      return { image: parsed[0] || FALLBACK_IMAGE, image2: parsed[1] || undefined };
+      return { image: parsed[0] || "", image2: parsed[1] || undefined };
     } catch {
       return { image: imageUrl };
     }
@@ -998,10 +999,10 @@ async function exportWinners() {
                   const isOutbid = hasBidOnItem && !isWinning;
                   return (
                     <Panel key={item.id} style={{ overflow: "hidden" }}>
-                      <div style={{ display: "flex", overflow: "hidden" }}>
+                      {item.image && <div style={{ display: "flex", overflow: "hidden" }}>
                         <img src={item.image} alt={item.title} style={{ width: item.image2 ? "50%" : "100%", display: "block" }} />
                         {item.image2 && <img src={item.image2} alt={`${item.title} photo 2`} style={{ width: "50%", display: "block", borderLeft: "2px solid #fff" }} />}
-                      </div>
+                      </div>}
                       <div style={{ padding: "20px" }}>
                         <div style={{ display: "flex", justifyContent: "space-between", gap: "12px", alignItems: "flex-start" }}>
                           <h3 style={{ marginTop: 0 }}>
