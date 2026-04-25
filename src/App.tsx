@@ -785,12 +785,12 @@ async function downloadItemQRDoc() {
       const itemUrl = `${registrationUrl}?item=${item.id}`;
       const dataUrl = await QRCode.toDataURL(itemUrl, { width: 250, margin: 2 });
       return `
-        <div style="width:50%;padding:24px 20px;text-align:center;font-family:Arial,sans-serif;box-sizing:border-box;border-left:1px solid #e2e8f0;">
-          <div style="font-size:36px;font-weight:700;margin-bottom:6px;">Item #${itemNum}</div>
-          <div style="font-size:22px;font-weight:700;margin-bottom:6px;">${item.title}</div>
-          <div style="font-size:13px;color:#555;margin-bottom:16px;">${item.description}</div>
+        <div style="width:100%;padding:40px 60px;text-align:center;font-family:Arial,sans-serif;box-sizing:border-box;">
+          <div style="font-size:40px;font-weight:700;margin-bottom:8px;">Item #${itemNum}</div>
+          <div style="font-size:24px;font-weight:700;margin-bottom:8px;">${item.title}</div>
+          <div style="font-size:14px;color:#555;margin-bottom:20px;">${item.description}</div>
           <img src="${dataUrl}" style="width:200px;height:200px;" />
-          <p style="color:#888;font-size:12px;margin-top:12px;">Scan to place your bid</p>
+          <p style="color:#888;font-size:13px;margin-top:12px;">Scan to place your bid</p>
         </div>`;
     })
   );
@@ -799,8 +799,9 @@ async function downloadItemQRDoc() {
   for (let i = 0; i < itemCards.length; i += 2) {
     const pair = itemCards.slice(i, i + 2);
     pages.push(`
-      <div style="display:flex;width:100%;page-break-after:always;min-height:500px;align-items:flex-start;">
-        ${pair.join("")}
+      <div style="display:flex;flex-direction:column;width:100%;page-break-after:always;">
+        ${pair[0]}
+        ${pair[1] ? `<hr style="border:none;border-top:1px solid #e2e8f0;margin:0 60px;" />${pair[1]}` : ""}
       </div>`);
   }
 
