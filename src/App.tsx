@@ -779,23 +779,32 @@ async function downloadItemQRDoc() {
   const sorted = [...realItems].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
   const numberMap = new Map(sorted.map((item, i) => [item.id, i + 1]));
 
-  const itemSections = await Promise.all(
-    realItems.map(async (item) => {
+  const itemCards = await Promise.all(
+    sorted.map(async (item) => {
       const itemNum = numberMap.get(item.id);
       const itemUrl = `${registrationUrl}?item=${item.id}`;
-      const dataUrl = await QRCode.toDataURL(itemUrl, { width: 300, margin: 2 });
+      const dataUrl = await QRCode.toDataURL(itemUrl, { width: 250, margin: 2 });
       return `
-        <div style="page-break-after:always;text-align:center;padding:60px 40px;font-family:Arial,sans-serif;">
-          <div style="font-size:48px;font-weight:700;margin-bottom:8px;">Item #${itemNum}</div>
-          <div style="font-size:28px;font-weight:700;margin-bottom:8px;">${item.title}</div>
-          <div style="font-size:16px;color:#555;margin-bottom:24px;">${item.description}</div>
-          <img src="${dataUrl}" style="width:250px;height:250px;" />
-          <p style="color:#888;font-size:13px;margin-top:16px;">Scan to place your bid</p>
+        <div style="width:50%;padding:24px 20px;text-align:center;font-family:Arial,sans-serif;box-sizing:border-box;border-left:1px solid #e2e8f0;">
+          <div style="font-size:36px;font-weight:700;margin-bottom:6px;">Item #${itemNum}</div>
+          <div style="font-size:22px;font-weight:700;margin-bottom:6px;">${item.title}</div>
+          <div style="font-size:13px;color:#555;margin-bottom:16px;">${item.description}</div>
+          <img src="${dataUrl}" style="width:200px;height:200px;" />
+          <p style="color:#888;font-size:12px;margin-top:12px;">Scan to place your bid</p>
         </div>`;
     })
   );
 
-  const html = `<html><body>${itemSections.join("")}</body></html>`;
+  const pages: string[] = [];
+  for (let i = 0; i < itemCards.length; i += 2) {
+    const pair = itemCards.slice(i, i + 2);
+    pages.push(`
+      <div style="display:flex;width:100%;page-break-after:always;min-height:500px;align-items:flex-start;">
+        ${pair.join("")}
+      </div>`);
+  }
+
+  const html = `<html><body style="margin:0;padding:0;">${pages.join("")}</body></html>`;
   const blob = new Blob([html], { type: "application/msword" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
