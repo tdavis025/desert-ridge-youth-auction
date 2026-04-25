@@ -1105,9 +1105,8 @@ async function exportWinners() {
                       style={{ display: "grid", gridTemplateColumns: "60px 1.6fr 1fr 1fr", gap: "16px", alignItems: "center", borderRadius: "18px", padding: "18px 24px", marginBottom: "10px" }}
                     >
                       <div style={{ fontSize: "28px", fontWeight: 700, color: "#475569" }}>#{itemNumberMap.get(item.id) ?? index + 1}</div>
-                      <div>
+                      <div style={{ display: "flex", alignItems: "center" }}>
                         <div style={{ fontSize: "26px", fontWeight: 700 }}>{item.title}</div>
-                        <div style={{ color: "#94a3b8", fontSize: "14px", marginTop: "2px" }}>Starting at {formatCurrency(item.startingBid)}</div>
                       </div>
                       <div>
                         <div style={{ color: "#94a3b8", fontSize: "12px", textTransform: "uppercase", letterSpacing: "0.15em" }}>High Bid</div>
