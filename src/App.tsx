@@ -685,27 +685,41 @@ async function placeBid() {
   }
 
   async function migrateImagesToStorage() {
-    const toMigrate = items.filter(i => i.image?.startsWith("data:") || i.image2?.startsWith("data:"));
-    if (toMigrate.length === 0) { setStatusIsError(false); setStatusMessage("No images need migration."); return; }
-    setStatusIsError(false); setStatusMessage(`Migrating ${toMigrate.length} items — please wait...`);
+    setStatusIsError(false); setStatusMessage("Checking for images to migrate...");
+    const { data: rawItems, error } = await supabase.from("items").select("id, image_url").like("image_url", "data:%");
+    const { data: rawItems2, error: error2 } = await supabase.from("items").select("id, image_url").like("image_url", '[%');
+    if (error || error2) { setStatusIsError(true); setStatusMessage("Error fetching items for migration."); return; }
+
+    const base64Items = [...(rawItems || [])];
+    for (const item of (rawItems2 || [])) {
+      try {
+        const parsed = JSON.parse(item.image_url) as string[];
+        if (parsed.some((u: string) => u?.startsWith("data:"))) base64Items.push(item);
+      } catch { /* skip */ }
+    }
+
+    if (base64Items.length === 0) { setStatusIsError(false); setStatusMessage("No images need migration."); return; }
+    setStatusMessage(`Migrating ${base64Items.length} items — please wait...`);
     let done = 0;
-    for (const item of toMigrate) {
-      let newImage = item.image;
-      let newImage2 = item.image2;
-      if (item.image?.startsWith("data:")) {
-        const blob = await fetch(item.image).then(r => r.blob());
-        const ext = blob.type.split("/")[1] || "jpg";
-        newImage = await uploadFileToStorage(blob, ext) ?? item.image;
+    for (const item of base64Items) {
+      let imageUrl = item.image_url as string;
+      if (imageUrl.startsWith("[")) {
+        try {
+          const parsed = JSON.parse(imageUrl) as string[];
+          const migrated = await Promise.all(parsed.map(async (u: string) => {
+            if (!u?.startsWith("data:")) return u;
+            const blob = await fetch(u).then(r => r.blob());
+            return await uploadFileToStorage(blob, blob.type.split("/")[1] || "jpg") ?? u;
+          }));
+          imageUrl = JSON.stringify(migrated);
+        } catch { /* skip */ }
+      } else if (imageUrl.startsWith("data:")) {
+        const blob = await fetch(imageUrl).then(r => r.blob());
+        imageUrl = await uploadFileToStorage(blob, blob.type.split("/")[1] || "jpg") ?? imageUrl;
       }
-      if (item.image2?.startsWith("data:")) {
-        const blob = await fetch(item.image2).then(r => r.blob());
-        const ext = blob.type.split("/")[1] || "jpg";
-        newImage2 = await uploadFileToStorage(blob, ext) ?? item.image2;
-      }
-      const imageUrl = newImage2 ? JSON.stringify([newImage, newImage2]) : (newImage ?? "");
       await supabase.from("items").update({ image_url: imageUrl }).eq("id", item.id);
       done++;
-      setStatusMessage(`Migrating images… ${done} of ${toMigrate.length} done`);
+      setStatusMessage(`Migrating images… ${done} of ${base64Items.length} done`);
     }
     setStatusIsError(false); setStatusMessage(`Migration complete — ${done} items updated.`);
     loadItems();
