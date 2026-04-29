@@ -273,7 +273,15 @@ const loadItems = useCallback(async () => {
   const { data, error } = await supabase
     .from("items")
     .select(`
-      *,
+      id,
+      title,
+      description,
+      donor_first_name,
+      donor_last_name,
+      estimated_retail_value,
+      starting_bid,
+      image_url,
+      created_at,
       bids (
         amount,
         bidder_number,
