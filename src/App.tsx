@@ -273,27 +273,12 @@ const loadItems = useCallback(async () => {
   const { data, error } = await supabase
     .from("items")
     .select(`
-      id,
-      title,
-      description,
-      donor_first_name,
-      donor_last_name,
-      estimated_retail_value,
-      starting_bid,
-      image_url,
-      created_at,
-      bids (
-        amount,
-        bidder_number,
-        created_at
-      )
+      id, title, description, donor_first_name, donor_last_name,
+      estimated_retail_value, starting_bid, image_url, created_at
     `)
     .order("created_at", { ascending: false });
 
-  if (error) {
-    console.error("Error loading items from Supabase:", error);
-    return;
-  }
+  if (error) { console.error("Error loading items from Supabase:", error); return; }
 
   const mappedItems: AuctionItem[] = (data || []).map((item) => ({
     id: item.id,
@@ -304,19 +289,28 @@ const loadItems = useCallback(async () => {
     estimatedRetailValue: Number(item.estimated_retail_value || 0),
     startingBid: Number(item.starting_bid || 0),
     ...parseImageUrl(item.image_url),
-    bids: (item.bids || []).map((bid: any) => ({
-      amount: Number(bid.amount || 0),
-      bidderNumber: bid.bidder_number,
-      createdAt: bid.created_at,
-    })),
+    bids: [],
     createdAt: item.created_at,
   }));
 
-  if (mappedItems.length > 0) {
-    setItems(mappedItems);
-  } else {
-    setItems(seedItems);
+  setItems(mappedItems.length > 0 ? mappedItems : seedItems);
+}, []);
+
+const loadBids = useCallback(async () => {
+  const { data, error } = await supabase
+    .from("bids")
+    .select("item_id, amount, bidder_number, created_at");
+
+  if (error) { console.error("Error loading bids from Supabase:", error); return; }
+
+  const bidsByItem = new Map<string, Bid[]>();
+  for (const bid of (data || [])) {
+    const list = bidsByItem.get(bid.item_id) || [];
+    list.push({ amount: Number(bid.amount || 0), bidderNumber: bid.bidder_number, createdAt: bid.created_at });
+    bidsByItem.set(bid.item_id, list);
   }
+
+  setItems((prev) => prev.map((item) => ({ ...item, bids: bidsByItem.get(item.id) || [] })));
 }, []);
 
 const ADMIN_BIDDER_NUMBERS = Array.from({ length: 20 }, (_, i) => String(i + 1));
@@ -364,13 +358,13 @@ useEffect(() => {
   const itemParam = params.get("item");
   if (itemParam) setDeepLinkItemId(itemParam);
 
-  loadItems();
+  loadItems().then(() => loadBids());
   loadAdminBidders();
 
   supabase.from("settings").select("bidding_closed").eq("id", 1).single().then(({ data }) => {
     if (data) setBiddingClosed(data.bidding_closed);
   });
-}, [loadItems, loadAdminBidders]);
+}, [loadItems, loadBids, loadAdminBidders]);
 
  // Items will be stored in Supabase instead of localStorage.
 
@@ -407,14 +401,14 @@ useEffect(() => {
       "postgres_changes",
       { event: "*", schema: "public", table: "items" },
       () => {
-        loadItems();
+        loadItems().then(() => loadBids());
       }
     )
     .on(
       "postgres_changes",
       { event: "*", schema: "public", table: "bids" },
       (payload: any) => {
-        loadItems();
+        loadBids();
         if (payload.new?.item_id) {
           setRecentlyBidItemId(payload.new.item_id);
           setTimeout(() => setRecentlyBidItemId(null), 3000);
