@@ -660,11 +660,47 @@ async function placeBid() {
     }
   }
 
+  async function uploadFileToStorage(file: Blob, ext: string): Promise<string | null> {
+    const path = `${crypto.randomUUID()}.${ext}`;
+    const { error } = await supabase.storage.from("item-images").upload(path, file, { contentType: file.type });
+    if (error) { console.error("Storage upload error:", error); return null; }
+    return supabase.storage.from("item-images").getPublicUrl(path).data.publicUrl;
+  }
+
   async function handleImageUpload(file: File | null | undefined, slot: 1 | 2 = 1) {
     if (!file) return;
-    const dataUrl = await fileToDataUrl(file);
-    if (slot === 1) setSubmission((prev) => ({ ...prev, image: dataUrl }));
-    else setSubmission((prev) => ({ ...prev, image2: dataUrl }));
+    const ext = file.name.split(".").pop() || "jpg";
+    const url = await uploadFileToStorage(file, ext);
+    if (!url) { setStatusIsError(true); setStatusMessage("Failed to upload image. Please try again."); return; }
+    if (slot === 1) setSubmission((prev) => ({ ...prev, image: url }));
+    else setSubmission((prev) => ({ ...prev, image2: url }));
+  }
+
+  async function migrateImagesToStorage() {
+    const toMigrate = items.filter(i => i.image?.startsWith("data:") || i.image2?.startsWith("data:"));
+    if (toMigrate.length === 0) { setStatusIsError(false); setStatusMessage("No images need migration."); return; }
+    setStatusIsError(false); setStatusMessage(`Migrating ${toMigrate.length} items — please wait...`);
+    let done = 0;
+    for (const item of toMigrate) {
+      let newImage = item.image;
+      let newImage2 = item.image2;
+      if (item.image?.startsWith("data:")) {
+        const blob = await fetch(item.image).then(r => r.blob());
+        const ext = blob.type.split("/")[1] || "jpg";
+        newImage = await uploadFileToStorage(blob, ext) ?? item.image;
+      }
+      if (item.image2?.startsWith("data:")) {
+        const blob = await fetch(item.image2).then(r => r.blob());
+        const ext = blob.type.split("/")[1] || "jpg";
+        newImage2 = await uploadFileToStorage(blob, ext) ?? item.image2;
+      }
+      const imageUrl = newImage2 ? JSON.stringify([newImage, newImage2]) : (newImage ?? "");
+      await supabase.from("items").update({ image_url: imageUrl }).eq("id", item.id);
+      done++;
+      setStatusMessage(`Migrating images… ${done} of ${toMigrate.length} done`);
+    }
+    setStatusIsError(false); setStatusMessage(`Migration complete — ${done} items updated.`);
+    loadItems();
   }
 
   async function handleDonationSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -1268,6 +1304,10 @@ async function exportWinners() {
   <button style={styles.buttonSecondary} onClick={exportWinners}>
     <Download size={16} style={{ marginRight: 6, verticalAlign: "middle" }} />
     Export Winners
+  </button>
+
+  <button style={styles.buttonSecondary} onClick={migrateImagesToStorage}>
+    Migrate Images to Storage
   </button>
 
   <button style={{ ...styles.buttonSecondary, borderColor: "#fca5a5", color: "#dc2626" }} onClick={handleResetAuction}>
