@@ -717,7 +717,16 @@ async function placeBid() {
         const blob = await fetch(imageUrl).then(r => r.blob());
         imageUrl = await uploadFileToStorage(blob, blob.type.split("/")[1] || "jpg") ?? imageUrl;
       }
-      await supabase.from("items").update({ image_url: imageUrl }).eq("id", item.id);
+      const stillBase64 = imageUrl.startsWith("data:") || (imageUrl.startsWith("[") && imageUrl.includes("data:"));
+      if (stillBase64) {
+        setStatusIsError(true); setStatusMessage(`Upload failed for item ${item.id} — check storage policy.`);
+        return;
+      }
+      const { error: updateError } = await supabase.from("items").update({ image_url: imageUrl }).eq("id", item.id);
+      if (updateError) {
+        setStatusIsError(true); setStatusMessage(`DB update failed: ${updateError.message}`);
+        return;
+      }
       done++;
       setStatusMessage(`Migrating images… ${done} of ${base64Items.length} done`);
     }
