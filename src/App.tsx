@@ -860,29 +860,29 @@ async function downloadItemQRDoc() {
       const itemUrl = `${registrationUrl}?item=${item.id}`;
       const dataUrl = await QRCode.toDataURL(itemUrl, { width: 240, margin: 2 });
       return `
-        <div style="width:100%;height:396px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;font-family:Arial,sans-serif;padding:16px 80px;box-sizing:border-box;overflow:hidden;">
-          <div style="font-size:36px;font-weight:700;margin-bottom:6px;">Item #${itemNum}</div>
-          <div style="font-size:20px;font-weight:700;margin-bottom:6px;">${item.title}</div>
-          <div style="font-size:12px;color:#555;margin-bottom:14px;overflow:hidden;max-height:36px;">${item.description}</div>
-          <img src="${dataUrl}" style="width:200px;height:200px;flex-shrink:0;" />
-          <p style="color:#888;font-size:11px;margin-top:10px;">Scan to place your bid</p>
-        </div>`;
+        <td height="370" style="text-align:center;vertical-align:middle;padding:20px 80px;font-family:Arial,sans-serif;">
+          <p style="font-size:36px;font-weight:700;margin:0 0 8px 0;">Item #${itemNum}</p>
+          <p style="font-size:20px;font-weight:700;margin:0 0 6px 0;">${item.title}</p>
+          <p style="font-size:12px;color:#555;margin:0 0 14px 0;">${item.description}</p>
+          <img src="${dataUrl}" width="200" height="200" /><br/>
+          <span style="color:#888;font-size:11px;">Scan to place your bid</span>
+        </td>`;
     })
   );
 
   const pages: string[] = [];
   for (let i = 0; i < itemCards.length; i += 2) {
-    const pair = itemCards.slice(i, i + 2);
-    const bottom = pair[1] ?? `<div style="width:100%;height:396px;"></div>`;
+    const top = itemCards[i];
+    const bottom = itemCards[i + 1] ?? `<td height="370"></td>`;
     pages.push(`
-      <div style="width:100%;height:792px;display:flex;flex-direction:column;page-break-after:always;overflow:hidden;">
-        ${pair[0]}
-        <div style="height:2px;flex-shrink:0;background:repeating-linear-gradient(to right,#cbd5e1 0px,#cbd5e1 8px,transparent 8px,transparent 16px);"></div>
-        ${bottom}
-      </div>`);
+      <table width="100%" cellpadding="0" cellspacing="0" style="page-break-after:always;border-collapse:collapse;">
+        <tr>${top}</tr>
+        <tr><td style="border-top:2px dashed #999;font-size:0;line-height:0;">&nbsp;</td></tr>
+        <tr>${bottom}</tr>
+      </table>`);
   }
 
-  const html = `<html><head><style>@page{size:letter portrait;margin:0;}body{margin:0;padding:0;}</style></head><body>${pages.join("")}</body></html>`;
+  const html = `<html><head><style>@page{size:letter portrait;margin:0.5in;}body{margin:0;padding:0;}</style></head><body>${pages.join("")}</body></html>`;
   const blob = new Blob([html], { type: "application/msword" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
