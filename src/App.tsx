@@ -954,9 +954,17 @@ async function exportWinners() {
   ...styles.buttonSecondary,
   background: currentTab === tab ? "#0f172a" : "white",
   color: currentTab === tab ? "white" : "#0f172a",
-  padding: "10px 14px",
-  minWidth: "130px",
-  whiteSpace: "nowrap",
+  padding: "8px 6px",
+  width: "80px",
+  minWidth: "unset",
+  whiteSpace: "normal",
+  wordBreak: "break-word",
+  textAlign: "center",
+  lineHeight: "1.2",
+  display: "flex",
+  flexDirection: "column",
+  alignItems: "center",
+  gap: "4px",
   flex: "0 0 auto",
 });
 
@@ -1057,36 +1065,36 @@ async function exportWinners() {
         <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
           <div style={{ display: "flex", gap: "12px", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap" }}>
 
-            <Panel style={{ padding: "8px", flex: 1, overflowX: "auto" }}>
-              <div style={{ display: "flex", gap: "8px", minWidth: "max-content" }}>
+            <Panel style={{ padding: "8px", flex: 1 }}>
+              <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
 
 <button style={tabButtonStyle("donate")} onClick={() => { setCurrentTab("donate"); setDonationSubmitted(false); }}>
-  <ListPlus size={16} style={{ marginRight: 6, verticalAlign: "middle" }} />
-  List/Donate Item
+  <ListPlus size={16} />
+  List/ Donate Item
 </button>
 
               <button style={tabButtonStyle("items")} onClick={() => setCurrentTab("items")}>
-  <Gavel size={16} style={{ marginRight: 6, verticalAlign: "middle" }} />
+  <Gavel size={16} />
   Available Items
 </button>
 
 <button style={tabButtonStyle("myItems")} onClick={() => setCurrentTab("myItems")}>
-  <Gavel size={16} style={{ marginRight: 6, verticalAlign: "middle" }} />
+  <Gavel size={16} />
   My Items
 </button>
 
 <button style={tabButtonStyle("checkout")} onClick={() => setCurrentTab("checkout")}>
-  <Download size={16} style={{ marginRight: 6, verticalAlign: "middle" }} />
+  <Download size={16} />
   Checkout
 </button>
 
 <button style={tabButtonStyle("dashboard")} onClick={() => setCurrentTab("dashboard")}>
-  <LayoutDashboard size={16} style={{ marginRight: 6, verticalAlign: "middle" }} />
+  <LayoutDashboard size={16} />
   Auction Dashboard
 </button>
 
 <button style={tabButtonStyle("admin")} onClick={handleAdminTabClick}>
-  <TabletSmartphone size={16} style={{ marginRight: 6, verticalAlign: "middle" }} />
+  <TabletSmartphone size={16} />
   ADMIN
 </button>
               </div>
