@@ -240,6 +240,7 @@ export default function SilentAuction() {
   const [statusMessage, setStatusMessage] = useState("");
   const [statusIsError, setStatusIsError] = useState(false);
   const [leaderboardNow, setLeaderboardNow] = useState(Date.now());
+  const [timerNow, setTimerNow] = useState(Date.now());
   const [tabletBidderNumber, setTabletBidderNumber] = useState("");
   const [auctionEndsAt, setAuctionEndsAt] = useState<number>(() => new Date("2026-05-02T19:30:00-07:00").getTime());
   const [softCloseWindowMinutes] = useState(2);
@@ -373,8 +374,9 @@ useEffect(() => {
   }, [adminUnlocked]);
 
   useEffect(() => {
-  const interval = setInterval(() => setLeaderboardNow(Date.now()), 1000);
-  return () => clearInterval(interval);
+  const interval = setInterval(() => setLeaderboardNow(Date.now()), 10000);
+  const timerInterval = setInterval(() => setTimerNow(Date.now()), 1000);
+  return () => { clearInterval(interval); clearInterval(timerInterval); };
 }, []);
 
 useEffect(() => {
@@ -427,12 +429,16 @@ useEffect(() => {
         setBiddingClosed(payload.new.bidding_closed);
       }
     )
-    .subscribe();
+    .subscribe((status) => {
+      if (status === "SUBSCRIBED") {
+        loadBids();
+      }
+    });
 
   return () => {
     supabase.removeChannel(channel);
   };
-}, [loadItems]);
+}, [loadItems, loadBids]);
 
   const itemNumberMap = useMemo(() => {
     const sorted = [...items].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
@@ -498,7 +504,7 @@ const winningItemsTotal = useMemo(
       .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
   }, [items, leaderboardNow]);
 
-  const timeRemainingMs = Math.max(auctionEndsAt - Date.now(), 0);
+  const timeRemainingMs = Math.max(auctionEndsAt - timerNow, 0);
   const remainingDays = Math.floor(timeRemainingMs / (1000 * 60 * 60 * 24));
   const remainingHours = Math.floor((timeRemainingMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
   const remainingMinutes = Math.floor((timeRemainingMs % (1000 * 60 * 60)) / (1000 * 60));
