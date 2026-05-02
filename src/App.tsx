@@ -241,7 +241,7 @@ export default function SilentAuction() {
   const [statusIsError, setStatusIsError] = useState(false);
   const [leaderboardNow, setLeaderboardNow] = useState(Date.now());
   const [tabletBidderNumber, setTabletBidderNumber] = useState("");
-  const [auctionEndsAt, setAuctionEndsAt] = useState<number>(() => new Date("2026-05-02T19:30:00").getTime());
+  const [auctionEndsAt, setAuctionEndsAt] = useState<number>(() => new Date("2026-05-02T19:30:00-07:00").getTime());
   const [softCloseWindowMinutes] = useState(2);
   const [softCloseExtensionMinutes] = useState(2);
   const [checkinName, setCheckinName] = useState("");
@@ -373,7 +373,7 @@ useEffect(() => {
   }, [adminUnlocked]);
 
   useEffect(() => {
-  const interval = setInterval(() => setLeaderboardNow(Date.now()), 10000);
+  const interval = setInterval(() => setLeaderboardNow(Date.now()), 1000);
   return () => clearInterval(interval);
 }, []);
 
@@ -498,7 +498,10 @@ const winningItemsTotal = useMemo(
   const remainingHours = Math.floor((timeRemainingMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
   const remainingMinutes = Math.floor((timeRemainingMs % (1000 * 60 * 60)) / (1000 * 60));
   const remainingSeconds = Math.floor((timeRemainingMs % (1000 * 60)) / 1000);
-  const countdownDisplay = `${remainingDays}d ${remainingHours}h ${remainingMinutes}m ${remainingSeconds}s`;
+  const countdownDisplay = remainingDays > 0
+    ? `${remainingDays}d ${remainingHours}h ${remainingMinutes}m`
+    : `${String(remainingHours).padStart(2,"0")}:${String(remainingMinutes).padStart(2,"0")}:${String(remainingSeconds).padStart(2,"0")}`;
+  const minutesRemaining = timeRemainingMs / (1000 * 60);
   const isInSoftCloseWindow = timeRemainingMs > 0 && timeRemainingMs <= softCloseWindowMinutes * 60 * 1000;
 const registrationUrl =
   typeof window !== "undefined"
@@ -989,8 +992,26 @@ async function exportWinners() {
                 <p style={{ marginBottom: 0, color: "#475569" }}>Help support the youth by bidding and/or donating items below.</p>
               </div>
               <div style={{ background: "#0f172a", color: "white", borderRadius: "18px", padding: "18px 20px", minWidth: "220px" }}>
-                <div style={{ display: "flex", gap: "8px", alignItems: "center", color: "#cbd5e1", fontSize: "14px" }}><UserRound size={16} /> Your bidder number</div>``
+                <div style={{ display: "flex", gap: "8px", alignItems: "center", color: "#cbd5e1", fontSize: "14px" }}><UserRound size={16} /> Your bidder number</div>
                 <div style={{ marginTop: "6px", fontSize: "32px", fontWeight: 700, letterSpacing: "0.2em" }}>#{bidderNumber}</div>
+                {timeRemainingMs > 0 && (
+                  <div style={{ marginTop: "12px", borderTop: "1px solid #334155", paddingTop: "12px" }}>
+                    <div style={{ fontSize: "12px", color: "#94a3b8", marginBottom: "6px" }}>Auction closes in</div>
+                    <div style={{
+                      display: "inline-block",
+                      fontSize: "22px",
+                      fontWeight: 700,
+                      letterSpacing: "0.05em",
+                      padding: minutesRemaining <= 30 ? "4px 10px" : "0",
+                      borderRadius: "8px",
+                      background: minutesRemaining <= 15 ? "#fef2f2" : minutesRemaining <= 30 ? "#fff7ed" : "transparent",
+                      color: minutesRemaining <= 15 ? "#b91c1c" : minutesRemaining <= 30 ? "#c2410c" : "white",
+                    }}>{countdownDisplay}</div>
+                  </div>
+                )}
+                {timeRemainingMs === 0 && (
+                  <div style={{ marginTop: "12px", borderTop: "1px solid #334155", paddingTop: "12px", fontSize: "14px", fontWeight: 700, color: "#f87171" }}>Auction closed</div>
+                )}
               </div>
             </div>
           </Panel>
