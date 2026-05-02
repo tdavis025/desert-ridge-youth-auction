@@ -406,11 +406,16 @@ useEffect(() => {
     )
     .on(
       "postgres_changes",
-      { event: "*", schema: "public", table: "bids" },
+      { event: "INSERT", schema: "public", table: "bids" },
       (payload: any) => {
-        loadBids();
-        if (payload.new?.item_id) {
-          setRecentlyBidItemId(payload.new.item_id);
+        const bid = payload.new;
+        if (bid?.item_id) {
+          setItems((prev) => prev.map((item) =>
+            item.id === bid.item_id
+              ? { ...item, bids: [...item.bids, { amount: Number(bid.amount || 0), bidderNumber: bid.bidder_number, createdAt: bid.created_at }] }
+              : item
+          ));
+          setRecentlyBidItemId(bid.item_id);
           setTimeout(() => setRecentlyBidItemId(null), 3000);
         }
       }
