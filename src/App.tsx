@@ -1203,11 +1203,11 @@ async function exportWinners() {
                         <div style={{ fontSize: "28px", fontWeight: 800 }}>{item.title}</div>
                       </div>
                       <div>
-                        <div style={{ color: "white", fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.15em" }}>High Bid</div>
+                        <div style={{ color: "white", fontSize: "15px", fontWeight: 900, textTransform: "uppercase", letterSpacing: "0.15em" }}>High Bid</div>
                         <div style={{ fontSize: "36px", fontWeight: 900, color: "#4ade80" }}>{formatCurrency(item.highest.amount)}</div>
                       </div>
                       <div>
-                        <div style={{ color: "white", fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.15em" }}>Bidder #</div>
+                        <div style={{ color: "white", fontSize: "15px", fontWeight: 900, textTransform: "uppercase", letterSpacing: "0.15em" }}>Bidder #</div>
                         <div style={{ fontSize: "36px", fontWeight: 900 }}>{item.highest.bidderNumber === "—" ? "—" : `#${item.highest.bidderNumber}`}</div>
                       </div>
                     </div>
