@@ -1025,7 +1025,7 @@ async function exportWinners() {
                     <div style={{ fontSize: "12px", color: "#94a3b8", marginBottom: "6px" }}>Auction closes in</div>
                     <div style={{
                       display: "inline-block",
-                      fontSize: "22px",
+                      fontSize: "32px",
                       fontWeight: 700,
                       letterSpacing: "0.05em",
                       padding: minutesRemaining <= 30 ? "4px 10px" : "0",
@@ -1040,7 +1040,7 @@ async function exportWinners() {
                 )}
                 <div style={{ marginTop: "12px", borderTop: "1px solid #334155", paddingTop: "12px" }}>
                   <div style={{ fontSize: "12px", color: "#94a3b8", marginBottom: "6px" }}>Total amount raised</div>
-                  <div style={{ fontSize: "22px", fontWeight: 700, color: "#4ade80", letterSpacing: "0.05em" }}>{formatCurrency(totalRaised)}</div>
+                  <div style={{ fontSize: "32px", fontWeight: 700, color: "#4ade80", letterSpacing: "0.05em" }}>{formatCurrency(totalRaised)}</div>
                 </div>
               </div>
             </div>
