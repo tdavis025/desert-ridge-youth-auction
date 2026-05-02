@@ -1510,8 +1510,8 @@ async function exportWinners() {
                 <p style={{ margin: "0 0 12px", fontWeight: 600 }}>Want to donate directly to the Desert Ridge Ward youth program?</p>
                 <p style={{ margin: "0 0 10px", color: "#475569", fontSize: "14px" }}>You have 2 options:</p>
                 <ol style={{ margin: 0, paddingLeft: "20px", color: "#475569", fontSize: "14px", display: "flex", flexDirection: "column", gap: "8px" }}>
-                  <li>Donate through <strong>LDS.ORG/Donations</strong>. Be sure to use the <strong>"Local - Youth Camp Registration"</strong> line item on the donation slip.</li>
-                  <li>Send money through <strong>Venmo to Bishop Allen</strong> and label it <strong>Youth Donation</strong>.</li>
+                  <li>Donate through <a href="https://lds.org/donations" target="_blank" rel="noopener noreferrer" style={{ color: "#2563eb", textDecoration: "underline" }}>LDS.ORG/Donations</a>. Be sure to use the <strong>"Local - Youth Camp Registration"</strong> line item on the donation slip.</li>
+                  <li>Send money through <strong>Venmo</strong> to Bishop Allen <a href="https://venmo.com/u/PETERALLEN44" target="_blank" rel="noopener noreferrer" style={{ color: "#2563eb", textDecoration: "underline" }}>here</a> and label it <strong>Youth Donation</strong>.</li>
                 </ol>
               </div>
             </Panel>
