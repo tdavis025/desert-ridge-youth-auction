@@ -1610,7 +1610,7 @@ async function exportWinners() {
               <div style={{ marginTop: "20px", border: "1px solid #e2e8f0", borderRadius: "16px", padding: "20px" }}>
                 {!biddingClosed && <p style={{ margin: "0 0 12px", fontWeight: 600 }}>Want to donate directly to the Desert Ridge Ward youth program?</p>}
                 <p style={{ margin: "0 0 10px", color: "#475569", fontSize: "14px" }}>{biddingClosed ? "There are 2 ways to pay:" : "You have 2 options:"}</p>
-                <ol style={{ margin: 0, paddingLeft: "20px", color: "#475569", fontSize: "14px", display: "flex", flexDirection: "column", gap: "8px" }}>
+                <ol style={{ margin: 0, paddingLeft: "20px", color: "#475569", fontSize: "14px", listStyle: "decimal", display: "flex", flexDirection: "column", gap: "8px" }}>
                   <li>Donate through <a href="https://lds.org/donations" target="_blank" rel="noopener noreferrer" style={{ color: "#2563eb", textDecoration: "underline" }}>LDS.ORG/Donations</a>. Be sure to use the <strong>"Local - Youth Camp Registration"</strong> line item on the donation slip.</li>
                   <li>Send money through <strong>Venmo</strong> to Bishop Allen <a href="https://venmo.com/u/PETERALLEN44" target="_blank" rel="noopener noreferrer" style={{ color: "#2563eb", textDecoration: "underline" }}>here</a> and label it <strong>Youth Donation</strong>.</li>
                 </ol>
