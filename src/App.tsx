@@ -499,7 +499,7 @@ const winningItemsTotal = useMemo(
 );
 
 const totalRaised = useMemo(
-  () => items.reduce((sum, item) => sum + (item.bids.length > 0 ? Number(item.highest?.amount || 0) : 0), 0),
+  () => items.reduce((sum, item) => sum + (item.bids.length > 0 ? Number(getHighestBid(item).amount || 0) : 0), 0),
   [items]
 );
 
