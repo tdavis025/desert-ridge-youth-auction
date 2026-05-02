@@ -1561,7 +1561,52 @@ async function exportWinners() {
           {currentTab === "checkout" && (
             <Panel style={{ padding: "20px" }}>
               <h3 style={{ marginTop: 0 }}>Auction Checkout</h3>
-              {!biddingClosed ? <div style={{ border: "1px solid #fde68a", background: "#fffbeb", color: "#92400e", borderRadius: "16px", padding: "20px" }}>Checkout will appear automatically after the auction is closed.</div> : checkoutItems.length === 0 ? <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}><div style={{ background: "#f8fafc", borderRadius: "16px", padding: "20px", color: "#475569" }}>No winning items were found for bidder #{bidderNumber}.</div><div style={{ border: "1px solid #e2e8f0", borderRadius: "16px", padding: "20px" }}><div style={{ color: "#64748b", fontSize: "14px" }}>Bidder Number</div><div style={{ marginTop: "4px", fontSize: "28px", fontWeight: 700 }}>#{bidderNumber}</div><div style={{ marginTop: "12px", color: "#64748b", fontSize: "14px" }}>Total Due</div><div style={{ marginTop: "4px", fontSize: "38px", fontWeight: 700 }}>$0</div></div></div> : <><div style={{ display: "grid", gap: "16px", gridTemplateColumns: "1fr 280px" }}><div style={{ border: "1px solid #e2e8f0", borderRadius: "16px", padding: "20px" }}><div style={{ color: "#64748b", fontSize: "14px" }}>Bidder Number</div><div style={{ marginTop: "4px", fontSize: "34px", fontWeight: 700 }}>#{bidderNumber}</div><div style={{ marginTop: "14px", color: "#64748b", fontSize: "14px" }}>Items Won</div><div style={{ marginTop: "4px", fontSize: "28px", fontWeight: 700 }}>{checkoutItems.length}</div></div><div style={{ background: "#0f172a", color: "white", borderRadius: "16px", padding: "20px" }}><div style={{ color: "#cbd5e1", fontSize: "14px" }}>Total Due</div><div style={{ marginTop: "8px", fontSize: "42px", fontWeight: 700 }}>{formatCurrency(checkoutTotal)}</div></div></div><div style={{ overflowX: "auto", border: "1px solid #e2e8f0", borderRadius: "16px" }}><table style={{ width: "100%", minWidth: "700px", borderCollapse: "collapse" }}><thead style={{ background: "#f8fafc", color: "#64748b", fontSize: "14px" }}><tr><th style={{ padding: "12px 16px", textAlign: "left" }}>Item</th><th style={{ padding: "12px 16px", textAlign: "left" }}>Winning Bid</th><th style={{ padding: "12px 16px", textAlign: "left" }}>Bidder #</th><th style={{ padding: "12px 16px", textAlign: "left" }}>Donor</th></tr></thead><tbody>{checkoutItems.map((item) => <tr key={item.id} style={{ borderTop: "1px solid #e2e8f0" }}><td style={{ padding: "12px 16px", fontWeight: 700 }}>{item.title}</td><td style={{ padding: "12px 16px" }}>{formatCurrency(item.highest.amount)}</td><td style={{ padding: "12px 16px" }}>#{item.highest.bidderNumber}</td><td style={{ padding: "12px 16px" }}>{item.donorFirstName} {item.donorLastName}</td></tr>)}</tbody></table></div></>}
+              {!biddingClosed ? (
+                <div style={{ border: "1px solid #fde68a", background: "#fffbeb", color: "#92400e", borderRadius: "16px", padding: "20px" }}>
+                  Checkout will appear automatically after the auction is closed.
+                </div>
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+                  {/* Bidder summary header */}
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+                    <div style={{ border: "1px solid #e2e8f0", borderRadius: "16px", padding: "16px" }}>
+                      <div style={{ color: "#64748b", fontSize: "13px" }}>Bidder Number</div>
+                      <div style={{ marginTop: "4px", fontSize: "32px", fontWeight: 700 }}>#{bidderNumber}</div>
+                    </div>
+                    <div style={{ background: "#0f172a", color: "white", borderRadius: "16px", padding: "16px" }}>
+                      <div style={{ color: "#cbd5e1", fontSize: "13px" }}>Total Due</div>
+                      <div style={{ marginTop: "4px", fontSize: "32px", fontWeight: 700 }}>{formatCurrency(checkoutTotal)}</div>
+                    </div>
+                  </div>
+
+                  {checkoutItems.length === 0 ? (
+                    <div style={{ background: "#f8fafc", borderRadius: "16px", padding: "20px", color: "#475569" }}>
+                      No winning items were found for bidder #{bidderNumber}.
+                    </div>
+                  ) : (
+                    <>
+                      <div style={{ fontSize: "14px", fontWeight: 600, color: "#475569" }}>Items You Won ({checkoutItems.length})</div>
+                      {checkoutItems.map((item) => (
+                        <div key={item.id} style={{ border: "1px solid #e2e8f0", borderRadius: "16px", overflow: "hidden" }}>
+                          <div style={{ background: "#f8fafc", padding: "12px 16px", borderBottom: "1px solid #e2e8f0" }}>
+                            <div style={{ fontWeight: 700, fontSize: "16px" }}>{item.title}</div>
+                            <div style={{ fontSize: "13px", color: "#64748b", marginTop: "2px" }}>Donated by {item.donorFirstName} {item.donorLastName}</div>
+                          </div>
+                          <div style={{ padding: "14px 16px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                            <div style={{ fontSize: "13px", color: "#64748b" }}>Winning Bid</div>
+                            <div style={{ fontSize: "22px", fontWeight: 700, color: "#16a34a" }}>{formatCurrency(item.highest.amount)}</div>
+                          </div>
+                        </div>
+                      ))}
+                      {/* Total row */}
+                      <div style={{ background: "#0f172a", color: "white", borderRadius: "16px", padding: "16px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                        <div style={{ fontSize: "16px", fontWeight: 600 }}>Total Amount Due</div>
+                        <div style={{ fontSize: "28px", fontWeight: 700 }}>{formatCurrency(checkoutTotal)}</div>
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
               <div style={{ marginTop: "20px", border: "1px solid #e2e8f0", borderRadius: "16px", padding: "20px" }}>
                 <p style={{ margin: "0 0 12px", fontWeight: 600 }}>Want to donate directly to the Desert Ridge Ward youth program?</p>
                 <p style={{ margin: "0 0 10px", color: "#475569", fontSize: "14px" }}>You have 2 options:</p>
