@@ -258,6 +258,9 @@ export default function SilentAuction() {
   const [adminAssignName, setAdminAssignName] = useState("");
   const [adminAssignNumber, setAdminAssignNumber] = useState("");
   const [deepLinkItemId, setDeepLinkItemId] = useState<string | null>(null);
+  const [showAuctionClosedNotif, setShowAuctionClosedNotif] = useState(false);
+  const [showCloseConfirm, setShowCloseConfirm] = useState(false);
+  const prevBiddingClosedRef = useRef<boolean | null>(null);
 
   const [submission, setSubmission] = useState<SubmissionForm>({
     title: "",
@@ -949,6 +952,13 @@ async function exportWinners() {
   const totalBids = items.reduce((sum, item) => sum + item.bids.length, 0);
   const totalValue = items.reduce((sum, item) => sum + getHighestBid(item).amount, 0);
 
+  useEffect(() => {
+    if (prevBiddingClosedRef.current === false && biddingClosed === true && !adminUnlocked) {
+      setShowAuctionClosedNotif(true);
+    }
+    prevBiddingClosedRef.current = biddingClosed;
+  }, [biddingClosed, adminUnlocked]);
+
   const tabButtonStyle = (tab: string): React.CSSProperties => ({
 
   ...styles.buttonSecondary,
@@ -1007,6 +1017,43 @@ async function exportWinners() {
 
   return (
     <div style={styles.page}>
+
+      {/* Auction closed notification modal */}
+      {showAuctionClosedNotif && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: "24px" }}>
+          <div style={{ background: "white", borderRadius: "20px", padding: "32px", maxWidth: "420px", width: "100%", textAlign: "center", boxShadow: "0 20px 60px rgba(0,0,0,0.3)" }}>
+            <div style={{ fontSize: "48px", marginBottom: "12px" }}>🔔</div>
+            <h2 style={{ margin: "0 0 12px", fontSize: "24px" }}>Auction is now closed!</h2>
+            <p style={{ color: "#475569", marginBottom: "24px", lineHeight: 1.6 }}>
+              Bidding has ended. Please go to the <strong>Checkout</strong> tab to see your total and make payment. Your total is displayed at the top of the screen.
+            </p>
+            <button style={{ ...styles.button, width: "100%", padding: "14px" }} onClick={() => { setShowAuctionClosedNotif(false); setCurrentTab("checkout"); }}>
+              Go to Checkout
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Close bidding confirmation modal */}
+      {showCloseConfirm && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: "24px" }}>
+          <div style={{ background: "white", borderRadius: "20px", padding: "32px", maxWidth: "380px", width: "100%", textAlign: "center", boxShadow: "0 20px 60px rgba(0,0,0,0.3)" }}>
+            <div style={{ fontSize: "40px", marginBottom: "12px" }}>⚠️</div>
+            <h2 style={{ margin: "0 0 12px", fontSize: "22px" }}>Close the auction?</h2>
+            <p style={{ color: "#475569", marginBottom: "28px", lineHeight: 1.6 }}>
+              This will end all bidding and notify everyone to proceed to checkout. Are you sure?
+            </p>
+            <div style={{ display: "flex", gap: "12px" }}>
+              <button style={{ ...styles.buttonSecondary, flex: 1, padding: "12px" }} onClick={() => setShowCloseConfirm(false)}>Cancel</button>
+              <button style={{ ...styles.button, flex: 1, padding: "12px", background: "#ef4444" }} onClick={async () => {
+                setShowCloseConfirm(false);
+                await supabase.from("settings").update({ bidding_closed: true }).eq("id", 1);
+              }}>Yes, Close It</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div style={styles.shell}>
 
         <div style={{ display: "grid", gap: "16px", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))" }}>
@@ -1371,9 +1418,12 @@ async function exportWinners() {
     Item QR Codes
   </button>
 
-  <button style={styles.buttonSecondary} onClick={async () => {
-    const next = !biddingClosed;
-    await supabase.from("settings").update({ bidding_closed: next }).eq("id", 1);
+  <button style={{ ...styles.buttonSecondary, ...(biddingClosed ? {} : { background: "#fef2f2", borderColor: "#fca5a5", color: "#b91c1c" }) }} onClick={async () => {
+    if (!biddingClosed) {
+      setShowCloseConfirm(true);
+    } else {
+      await supabase.from("settings").update({ bidding_closed: false }).eq("id", 1);
+    }
   }}>
     {biddingClosed ? "Reopen Bidding" : "Close Bidding"}
   </button>
