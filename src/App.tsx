@@ -1196,19 +1196,19 @@ async function exportWinners() {
                     <div
                       key={`${item.id}-${index}`}
                       className={`projector-item${recentlyBidItemId === item.id ? " bid-flash" : ""}`}
-                      style={{ display: "grid", gridTemplateColumns: "60px 1.6fr 1fr 1fr", gap: "16px", alignItems: "center", borderRadius: "18px", padding: "18px 24px", marginBottom: "10px", border: "3px solid rgba(255,255,255,0.25)" }}
+                      style={{ display: "grid", gridTemplateColumns: "60px 1.6fr 1fr 1fr", gap: "16px", alignItems: "center", borderRadius: "18px", padding: "12px 24px", marginBottom: "10px", border: "4px solid white" }}
                     >
-                      <div style={{ fontSize: "28px", fontWeight: 700, color: "#475569" }}>#{itemNumberMap.get(item.id) ?? index + 1}</div>
+                      <div style={{ fontSize: "36px", fontWeight: 900, color: "white" }}>#{itemNumberMap.get(item.id) ?? index + 1}</div>
                       <div style={{ display: "flex", alignItems: "center" }}>
-                        <div style={{ fontSize: "26px", fontWeight: 700 }}>{item.title}</div>
+                        <div style={{ fontSize: "28px", fontWeight: 800 }}>{item.title}</div>
                       </div>
                       <div>
-                        <div style={{ color: "#94a3b8", fontSize: "12px", textTransform: "uppercase", letterSpacing: "0.15em" }}>High Bid</div>
-                        <div style={{ fontSize: "30px", fontWeight: 700, color: "#4ade80" }}>{formatCurrency(item.highest.amount)}</div>
+                        <div style={{ color: "#94a3b8", fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.15em" }}>High Bid</div>
+                        <div style={{ fontSize: "36px", fontWeight: 900, color: "#4ade80" }}>{formatCurrency(item.highest.amount)}</div>
                       </div>
                       <div>
-                        <div style={{ color: "#94a3b8", fontSize: "12px", textTransform: "uppercase", letterSpacing: "0.15em" }}>Bidder #</div>
-                        <div style={{ fontSize: "30px", fontWeight: 700 }}>{item.highest.bidderNumber === "—" ? "—" : `#${item.highest.bidderNumber}`}</div>
+                        <div style={{ color: "#94a3b8", fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.15em" }}>Bidder #</div>
+                        <div style={{ fontSize: "36px", fontWeight: 900 }}>{item.highest.bidderNumber === "—" ? "—" : `#${item.highest.bidderNumber}`}</div>
                       </div>
                     </div>
                   ))}
