@@ -1012,8 +1012,8 @@ async function exportWinners() {
         <div style={{ display: "grid", gap: "16px", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))" }}>
 
           <Panel style={{ padding: "24px" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", gap: "16px", alignItems: "center", flexWrap: "wrap" }}>
-              <div>
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "16px" }}>
+              <div style={{ textAlign: "center" }}>
                 <h1 style={{ margin: 0, fontSize: "32px" }}>Desert Ridge Ward Youth Auction</h1>
                 <p style={{ marginBottom: 0, color: "#475569" }}>Help support the youth by bidding and/or donating items below.</p>
               </div>
@@ -1112,10 +1112,10 @@ async function exportWinners() {
                   </div>
                   <div style={{ color: "#64748b", fontSize: "14px" }}>{biddingClosed ? "Bidding is currently closed." : "Bidding is currently open."}</div>
                 </div>
-                <div style={{ marginTop: "8px", fontSize: "14px", color: "#475569" }}>
-                  Would you rather donate directly instead of bidding on items?{" "}
-                  <span onClick={() => setCurrentTab("checkout")} style={{ color: "#2563eb", textDecoration: "underline", cursor: "pointer" }}>Click here</span>
-                </div>
+              </Panel>
+              <Panel style={{ padding: "14px 16px", fontSize: "14px", color: "#475569", textAlign: "center" }}>
+                Would you rather donate directly instead of bidding on items?{" "}
+                <span onClick={() => setCurrentTab("checkout")} style={{ color: "#2563eb", textDecoration: "underline", cursor: "pointer" }}>Click here</span>
               </Panel>
               <div style={{ display: "grid", gap: "20px", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))" }}>
                 {filteredItems.map((item) => {
