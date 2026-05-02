@@ -1065,7 +1065,7 @@ async function exportWinners() {
                 <p style={{ marginBottom: 0, color: "#475569" }}>Help support the youth by bidding and/or donating items below.</p>
               </div>
               <div style={{ background: "#0f172a", color: "white", borderRadius: "18px", padding: "18px 20px", minWidth: "220px" }}>
-                <div style={{ display: "flex", gap: "8px", alignItems: "center", color: "#cbd5e1", fontSize: "14px" }}><UserRound size={16} /> <div><div>Your bidder number</div><div style={{ fontSize: "11px", color: "#64748b" }}>(locked to your device)</div></div></div>
+                <div style={{ display: "flex", gap: "8px", alignItems: "center", color: "#cbd5e1", fontSize: "14px" }}><UserRound size={16} /> <div><div>Your bidder number</div><div style={{ fontSize: "11px", color: "#64748b" }}>(tied to your device)</div></div></div>
                 <div style={{ marginTop: "6px", fontSize: "32px", fontWeight: 700, letterSpacing: "0.2em" }}>#{bidderNumber}</div>
                 {timeRemainingMs > 0 && (
                   <div style={{ marginTop: "12px", borderTop: "1px solid #334155", paddingTop: "12px" }}>
