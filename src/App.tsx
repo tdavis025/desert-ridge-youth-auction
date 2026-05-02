@@ -1112,6 +1112,10 @@ async function exportWinners() {
                   </div>
                   <div style={{ color: "#64748b", fontSize: "14px" }}>{biddingClosed ? "Bidding is currently closed." : "Bidding is currently open."}</div>
                 </div>
+                <div style={{ marginTop: "8px", fontSize: "14px", color: "#475569" }}>
+                  Would you rather donate directly instead of bidding on items?{" "}
+                  <span onClick={() => setCurrentTab("checkout")} style={{ color: "#2563eb", textDecoration: "underline", cursor: "pointer" }}>Click here</span>
+                </div>
               </Panel>
               <div style={{ display: "grid", gap: "20px", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))" }}>
                 {filteredItems.map((item) => {
