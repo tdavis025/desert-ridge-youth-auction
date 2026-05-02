@@ -1066,8 +1066,8 @@ async function exportWinners() {
         <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
           <div style={{ display: "flex", gap: "12px", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap" }}>
 
-            <Panel style={{ padding: "8px", flex: 1, overflowX: "auto" }}>
-              <div style={{ display: "flex", gap: "8px", minWidth: "max-content" }}>
+            <Panel style={{ padding: "8px", flex: 1 }}>
+              <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
 
 <button style={tabButtonStyle("donate")} onClick={() => { setCurrentTab("donate"); setDonationSubmitted(false); }}>
   <ListPlus size={16} />
