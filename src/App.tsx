@@ -864,8 +864,8 @@ async function downloadItemQRDoc() {
           <p style="font-size:36px;font-weight:700;margin:0 0 8px 0;">Item #${itemNum}</p>
           <p style="font-size:20px;font-weight:700;margin:0 0 6px 0;">${item.title}</p>
           <p style="font-size:12px;color:#555;margin:0 0 14px 0;">${item.description}</p>
-          <img src="${dataUrl}" width="200" height="200" /><br/>
-          <span style="color:#888;font-size:11px;">Scan to place your bid</span>
+          <img src="${dataUrl}" width="200" height="200" />
+          <p style="color:#888;font-size:11px;margin:10px 0 0 0;">Scan to place your bid</p>
         </td>`;
     })
   );
