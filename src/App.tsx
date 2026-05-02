@@ -1196,7 +1196,7 @@ async function exportWinners() {
                     <div
                       key={`${item.id}-${index}`}
                       className={`projector-item${recentlyBidItemId === item.id ? " bid-flash" : ""}`}
-                      style={{ display: "grid", gridTemplateColumns: "60px 1.6fr 1fr 1fr", gap: "16px", alignItems: "center", borderRadius: "18px", padding: "18px 24px", marginBottom: "10px" }}
+                      style={{ display: "grid", gridTemplateColumns: "60px 1.6fr 1fr 1fr", gap: "16px", alignItems: "center", borderRadius: "18px", padding: "18px 24px", marginBottom: "10px", border: "3px solid rgba(255,255,255,0.25)" }}
                     >
                       <div style={{ fontSize: "28px", fontWeight: 700, color: "#475569" }}>#{itemNumberMap.get(item.id) ?? index + 1}</div>
                       <div style={{ display: "flex", alignItems: "center" }}>
