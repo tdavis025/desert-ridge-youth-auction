@@ -1070,11 +1070,6 @@ async function exportWinners() {
   Available Items
 </button>
 
-<button style={tabButtonStyle("dashboard")} onClick={() => setCurrentTab("dashboard")}>
-  <LayoutDashboard size={16} style={{ marginRight: 6, verticalAlign: "middle" }} />
-  Auction Dashboard
-</button>
-
 <button style={tabButtonStyle("myItems")} onClick={() => setCurrentTab("myItems")}>
   <Gavel size={16} style={{ marginRight: 6, verticalAlign: "middle" }} />
   My Items
@@ -1085,6 +1080,10 @@ async function exportWinners() {
   Checkout
 </button>
 
+<button style={tabButtonStyle("dashboard")} onClick={() => setCurrentTab("dashboard")}>
+  <LayoutDashboard size={16} style={{ marginRight: 6, verticalAlign: "middle" }} />
+  Auction Dashboard
+</button>
 
 <button style={tabButtonStyle("admin")} onClick={handleAdminTabClick}>
   <TabletSmartphone size={16} style={{ marginRight: 6, verticalAlign: "middle" }} />
@@ -1152,7 +1151,6 @@ async function exportWinners() {
                   <thead>
                     <tr style={{ color: "#64748b", fontSize: "14px", textAlign: "left" }}>
                       <th style={{ padding: "8px 16px" }}>Item</th>
-                      <th style={{ padding: "8px 16px" }}>Starting Bid</th>
                       <th style={{ padding: "8px 16px" }}>Highest Bid</th>
                       <th style={{ padding: "8px 16px" }}>Highest Bidder #</th>
                       <th style={{ padding: "8px 16px" }}>Bid Count</th>
@@ -1164,7 +1162,6 @@ async function exportWinners() {
                       return (
                         <tr key={item.id} style={{ background: "#f8fafc" }}>
                           <td style={{ padding: "12px 16px", fontWeight: 700 }}>{item.title}</td>
-                          <td style={{ padding: "12px 16px" }}>{formatCurrency(item.startingBid)}</td>
                           <td style={{ padding: "12px 16px", fontWeight: 700 }}>{formatCurrency(highest.amount)}</td>
                           <td style={{ padding: "12px 16px" }}>{highest.bidderNumber === "—" ? "—" : `#${highest.bidderNumber}`}</td>
                           <td style={{ padding: "12px 16px" }}>{item.bids.length}</td>
