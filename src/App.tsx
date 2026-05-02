@@ -955,8 +955,8 @@ async function exportWinners() {
   background: currentTab === tab ? "#0f172a" : "white",
   color: currentTab === tab ? "white" : "#0f172a",
   padding: "8px 6px",
-  width: "88px",
-  minWidth: "unset",
+  flex: "1 1 80px",
+  minWidth: "80px",
   whiteSpace: "normal",
   wordBreak: "normal",
   overflowWrap: "normal",
@@ -966,7 +966,6 @@ async function exportWinners() {
   flexDirection: "column",
   alignItems: "center",
   gap: "4px",
-  flex: "0 0 auto",
 });
 
   const actionButtonStyle = (disabled?: boolean): React.CSSProperties => ({
