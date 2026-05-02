@@ -858,14 +858,14 @@ async function downloadItemQRDoc() {
     sorted.map(async (item) => {
       const itemNum = numberMap.get(item.id);
       const itemUrl = `${registrationUrl}?item=${item.id}`;
-      const dataUrl = await QRCode.toDataURL(itemUrl, { width: 220, margin: 2 });
+      const dataUrl = await QRCode.toDataURL(itemUrl, { width: 240, margin: 2 });
       return `
-        <div style="height:480px;overflow:hidden;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;font-family:Arial,sans-serif;padding:20px 60px;box-sizing:border-box;">
+        <div style="width:100%;height:396px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;font-family:Arial,sans-serif;padding:16px 80px;box-sizing:border-box;overflow:hidden;">
           <div style="font-size:36px;font-weight:700;margin-bottom:6px;">Item #${itemNum}</div>
-          <div style="font-size:22px;font-weight:700;margin-bottom:6px;">${item.title}</div>
-          <div style="font-size:13px;color:#555;margin-bottom:16px;max-height:48px;overflow:hidden;">${item.description}</div>
-          <img src="${dataUrl}" style="width:180px;height:180px;flex-shrink:0;" />
-          <p style="color:#888;font-size:12px;margin-top:10px;">Scan to place your bid</p>
+          <div style="font-size:20px;font-weight:700;margin-bottom:6px;">${item.title}</div>
+          <div style="font-size:12px;color:#555;margin-bottom:14px;overflow:hidden;max-height:36px;">${item.description}</div>
+          <img src="${dataUrl}" style="width:200px;height:200px;flex-shrink:0;" />
+          <p style="color:#888;font-size:11px;margin-top:10px;">Scan to place your bid</p>
         </div>`;
     })
   );
@@ -873,15 +873,16 @@ async function downloadItemQRDoc() {
   const pages: string[] = [];
   for (let i = 0; i < itemCards.length; i += 2) {
     const pair = itemCards.slice(i, i + 2);
+    const bottom = pair[1] ?? `<div style="width:100%;height:396px;"></div>`;
     pages.push(`
-      <div style="height:960px;overflow:hidden;page-break-after:always;page-break-inside:avoid;">
+      <div style="width:100%;height:792px;display:flex;flex-direction:column;page-break-after:always;overflow:hidden;">
         ${pair[0]}
-        <hr style="border:none;border-top:2px dashed #cbd5e1;margin:0 60px;" />
-        ${pair[1] ?? '<div style="height:480px;"></div>'}
+        <div style="height:2px;flex-shrink:0;background:repeating-linear-gradient(to right,#cbd5e1 0px,#cbd5e1 8px,transparent 8px,transparent 16px);"></div>
+        ${bottom}
       </div>`);
   }
 
-  const html = `<html><head><style>@page{size:letter;margin:0;}body{margin:0;padding:0;}</style></head><body>${pages.join("")}</body></html>`;
+  const html = `<html><head><style>@page{size:letter portrait;margin:0;}body{margin:0;padding:0;}</style></head><body>${pages.join("")}</body></html>`;
   const blob = new Blob([html], { type: "application/msword" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
