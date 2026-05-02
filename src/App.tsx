@@ -1466,46 +1466,43 @@ async function exportWinners() {
         Items you bid on will show up here.
       </div>
     ) : (
-      <div style={{ overflowX: "auto", border: "1px solid #e2e8f0", borderRadius: "16px" }}>
-        <table style={{ width: "100%", minWidth: "760px", borderCollapse: "collapse" }}>
-          <thead style={{ background: "#f8fafc", color: "#64748b", fontSize: "14px" }}>
-            <tr>
-              <th style={{ padding: "12px 16px", textAlign: "left" }}>Item</th>
-              <th style={{ padding: "12px 16px", textAlign: "left" }}>Status</th>
-              <th style={{ padding: "12px 16px", textAlign: "left" }}>Highest Bid</th>
-              <th style={{ padding: "12px 16px", textAlign: "left" }}>Your Highest Bid</th>
-              <th style={{ padding: "12px 16px", textAlign: "left" }}>Total Number of Bids</th>
-            </tr>
-          </thead>
-          <tbody>
-            {myItems.map((item) => {
-              const userBids = item.bids.filter(
-                (bid) => String(bid.bidderNumber) === String(bidderNumber)
-              );
-              const yourHighestBid = userBids.length
-                ? Math.max(...userBids.map((bid) => bid.amount))
-                : 0;
+      <div style={{ display: "grid", gap: "12px", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))" }}>
+        {myItems.map((item) => {
+          const userBids = item.bids.filter(
+            (bid) => String(bid.bidderNumber) === String(bidderNumber)
+          );
+          const yourHighestBid = userBids.length
+            ? Math.max(...userBids.map((bid) => bid.amount))
+            : 0;
+          const winning = item.isWinning;
 
-              return (
-                <tr key={item.id} style={{ borderTop: "1px solid #e2e8f0" }}>
-                  <td style={{ padding: "12px 16px", fontWeight: 700 }}>
-                    <span style={{ color: "#2563eb", cursor: "pointer", textDecoration: "underline" }} onClick={() => { setCurrentTab("items"); openBid(item); }}>{item.title}</span>
-                  </td>
-                  <td style={{ padding: "12px 16px" }}>
-                    {item.isWinning ? "Winning" : "Outbid"}
-                  </td>
-                  <td style={{ padding: "12px 16px" }}>
-                    {formatCurrency(item.highest.amount)}
-                  </td>
-                  <td style={{ padding: "12px 16px" }}>
-                    {formatCurrency(yourHighestBid)}
-                  </td>
-                  <td style={{ padding: "12px 16px" }}>{item.bids.length}</td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+          return (
+            <div key={item.id} style={{ border: `2px solid ${winning ? "#22c55e" : "#ef4444"}`, borderRadius: "16px", overflow: "hidden" }}>
+              <div style={{ background: winning ? "#22c55e" : "#ef4444", color: "white", padding: "8px 16px", fontWeight: 700, fontSize: "14px", letterSpacing: "0.05em", textTransform: "uppercase" }}>
+                {winning ? "✓ Winning" : "✗ Outbid"}
+              </div>
+              <div style={{ padding: "16px" }}>
+                <div style={{ fontWeight: 700, fontSize: "16px", marginBottom: "12px" }}>
+                  <span style={{ color: "#2563eb", cursor: "pointer", textDecoration: "underline" }} onClick={() => { setCurrentTab("items"); openBid(item); }}>{item.title}</span>
+                </div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
+                  <div style={{ background: "#f8fafc", borderRadius: "10px", padding: "10px" }}>
+                    <div style={{ fontSize: "11px", color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "4px" }}>Highest Bid</div>
+                    <div style={{ fontSize: "18px", fontWeight: 700 }}>{formatCurrency(item.highest.amount)}</div>
+                  </div>
+                  <div style={{ background: "#f8fafc", borderRadius: "10px", padding: "10px" }}>
+                    <div style={{ fontSize: "11px", color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "4px" }}>Your Bid</div>
+                    <div style={{ fontSize: "18px", fontWeight: 700 }}>{formatCurrency(yourHighestBid)}</div>
+                  </div>
+                  <div style={{ background: "#f8fafc", borderRadius: "10px", padding: "10px", gridColumn: "1 / -1" }}>
+                    <div style={{ fontSize: "11px", color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "4px" }}>Total Bids on Item</div>
+                    <div style={{ fontSize: "18px", fontWeight: 700 }}>{item.bids.length}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        })}
       </div>
     )}
   </Panel>
