@@ -955,10 +955,11 @@ async function exportWinners() {
   background: currentTab === tab ? "#0f172a" : "white",
   color: currentTab === tab ? "white" : "#0f172a",
   padding: "8px 6px",
-  width: "80px",
+  width: "88px",
   minWidth: "unset",
   whiteSpace: "normal",
-  wordBreak: "break-word",
+  wordBreak: "normal",
+  overflowWrap: "normal",
   textAlign: "center",
   lineHeight: "1.2",
   display: "flex",
@@ -1065,8 +1066,8 @@ async function exportWinners() {
         <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
           <div style={{ display: "flex", gap: "12px", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap" }}>
 
-            <Panel style={{ padding: "8px", flex: 1 }}>
-              <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+            <Panel style={{ padding: "8px", flex: 1, overflowX: "auto" }}>
+              <div style={{ display: "flex", gap: "8px", minWidth: "max-content" }}>
 
 <button style={tabButtonStyle("donate")} onClick={() => { setCurrentTab("donate"); setDonationSubmitted(false); }}>
   <ListPlus size={16} />
