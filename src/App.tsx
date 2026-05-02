@@ -497,6 +497,12 @@ const winningItemsTotal = useMemo(
   () => winningItems.reduce((sum, item) => sum + Number(item.highest.amount || 0), 0),
   [winningItems]
 );
+
+const totalRaised = useMemo(
+  () => items.reduce((sum, item) => sum + (item.bids.length > 0 ? Number(item.highest?.amount || 0) : 0), 0),
+  [items]
+);
+
   const projectorData = useMemo(() => {
     void leaderboardNow;
     return [...items]
@@ -1024,6 +1030,10 @@ async function exportWinners() {
                 {timeRemainingMs === 0 && (
                   <div style={{ marginTop: "12px", borderTop: "1px solid #334155", paddingTop: "12px", fontSize: "14px", fontWeight: 700, color: "#f87171" }}>Auction closed</div>
                 )}
+                <div style={{ marginTop: "12px", borderTop: "1px solid #334155", paddingTop: "12px" }}>
+                  <div style={{ fontSize: "12px", color: "#94a3b8", marginBottom: "6px" }}>Total amount raised</div>
+                  <div style={{ fontSize: "22px", fontWeight: 700, color: "#4ade80", letterSpacing: "0.05em" }}>{formatCurrency(totalRaised)}</div>
+                </div>
               </div>
             </div>
           </Panel>
