@@ -243,8 +243,6 @@ export default function SilentAuction() {
   const [timerNow, setTimerNow] = useState(Date.now());
   const [tabletBidderNumber, setTabletBidderNumber] = useState("");
   const [auctionEndsAt, setAuctionEndsAt] = useState<number>(() => new Date("2026-05-02T19:30:00-07:00").getTime());
-  const [softCloseWindowMinutes] = useState(2);
-  const [softCloseExtensionMinutes] = useState(2);
   const [checkinName, setCheckinName] = useState("");
   const [currentTab, setCurrentTab] = useState("items");
   const [adminUnlocked, setAdminUnlocked] = useState(false);
@@ -522,7 +520,6 @@ const totalRaised = useMemo(
     ? `${remainingDays}d ${remainingHours}h ${remainingMinutes}m`
     : `${String(remainingHours).padStart(2,"0")}:${String(remainingMinutes).padStart(2,"0")}:${String(remainingSeconds).padStart(2,"0")}`;
   const minutesRemaining = timeRemainingMs / (1000 * 60);
-  const isInSoftCloseWindow = timeRemainingMs > 0 && timeRemainingMs <= softCloseWindowMinutes * 60 * 1000;
 const registrationUrl =
   typeof window !== "undefined"
     ? window.location.origin
@@ -669,21 +666,9 @@ async function placeBid() {
     )
   );
 
-  const msRemainingBeforeBid = auctionEndsAt - Date.now();
-  if (msRemainingBeforeBid <= softCloseWindowMinutes * 60 * 1000) {
-    setAuctionEndsAt(Date.now() + softCloseExtensionMinutes * 60 * 1000);
-    setStatusIsError(false); setStatusMessage(
-      `Bid placed successfully on ${selectedItem.title}. You are currently winning at ${formatCurrency(
-        amount
-      )}. Auction extended by ${softCloseExtensionMinutes} minutes.`
-    );
-  } else {
-    setStatusIsError(false); setStatusMessage(
-      `Bid placed successfully on ${selectedItem.title}. You are currently winning at ${formatCurrency(
-        amount
-      )}.`
-    );
-  }
+  setStatusIsError(false); setStatusMessage(
+    `Bid placed successfully on ${selectedItem.title}. You are currently winning at ${formatCurrency(amount)}.`
+  );
 
   setSelectedItem(null);
   setBidAmount("");
@@ -1268,7 +1253,6 @@ async function exportWinners() {
                 <div style={{ marginTop: "10px", fontSize: "18px", fontWeight: 600, color: biddingClosed ? "#f87171" : "#4ade80" }}>
                   {biddingClosed ? "BIDDING CLOSED" : "BIDDING OPEN"}
                 </div>
-                {isInSoftCloseWindow && <div style={{ marginTop: "12px", display: "inline-block", border: "1px solid rgba(251,191,36,0.5)", background: "rgba(251,191,36,0.1)", color: "#fde68a", borderRadius: "12px", padding: "8px 16px", fontSize: "14px" }}>Soft-close active — new bids extend by {softCloseExtensionMinutes} min</div>}
               </div>
 
 
@@ -1472,10 +1456,8 @@ async function exportWinners() {
 </div>
               <div style={{ marginTop: "16px", border: "1px solid #e2e8f0", borderRadius: "16px", padding: "16px" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "12px", fontWeight: 700 }}><TimerReset size={16} /> Auction Timing</div>
-                <div style={{ display: "grid", gap: "12px", gridTemplateColumns: "repeat(3, 1fr)" }}>
+                <div style={{ display: "grid", gap: "12px", gridTemplateColumns: "repeat(1, 1fr)" }}>
                   <div style={{ background: "#f8fafc", borderRadius: "12px", padding: "12px" }}><div style={{ color: "#64748b", fontSize: "12px", textTransform: "uppercase" }}>Time Remaining</div><div style={{ marginTop: "4px", fontSize: "18px", fontWeight: 700 }}>{countdownDisplay}</div></div>
-                  <div style={{ background: "#f8fafc", borderRadius: "12px", padding: "12px" }}><div style={{ color: "#64748b", fontSize: "12px", textTransform: "uppercase" }}>Soft-Close Window</div><div style={{ marginTop: "4px", fontSize: "24px", fontWeight: 700 }}>{softCloseWindowMinutes} min</div></div>
-                  <div style={{ background: "#f8fafc", borderRadius: "12px", padding: "12px" }}><div style={{ color: "#64748b", fontSize: "12px", textTransform: "uppercase" }}>Extension</div><div style={{ marginTop: "4px", fontSize: "24px", fontWeight: 700 }}>+{softCloseExtensionMinutes} min</div></div>
                 </div>
               </div>
 
