@@ -599,7 +599,27 @@ async function placeBid() {
   if (!selectedItem) return;
   setBidConfirmPending(false);
 
+  // Check local state first (fast)
   if (biddingClosed) {
+    setStatusIsError(true); setStatusMessage("Bidding is currently closed.");
+    return;
+  }
+
+  // Also block if the countdown timer has run out
+  if (auctionEndsAt - Date.now() <= 0) {
+    setStatusIsError(true); setStatusMessage("Bidding is currently closed.");
+    return;
+  }
+
+  // Re-check live from DB right before inserting to catch any timing gaps
+  const { data: liveSettings } = await supabase
+    .from("settings")
+    .select("bidding_closed")
+    .eq("id", 1)
+    .single();
+
+  if (liveSettings?.bidding_closed) {
+    setBiddingClosed(true);
     setStatusIsError(true); setStatusMessage("Bidding is currently closed.");
     return;
   }
